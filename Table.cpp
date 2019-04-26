@@ -180,3 +180,20 @@ PrintableTable * Table::select(vector<string> attrFilter, WhereClause c) {
     }
     return table;
 }
+
+ostream& Table::show(ostream & out) const {
+    out << "Field\tType\tNull\tKey\tDefault\tExtra" << std::endl;
+    for (auto i: attrs) {
+        out << i.name << "\t";
+        if (i.type == ATTR_CHAR) 
+            out << "CHAR";
+        else if (i.type == ATTR_INT) 
+            out << "INT";
+        else if (i.type == ATTR_DOUBLE) 
+            out << "DOUBLE";
+        else { /* undefined */}
+        out << "\t";
+        out << (i.notNull ? "NO" : "YES") << "\t" << (primary == i.name ? "PRI" : "") << "\t";
+        out << "NULL\t" << std::endl;
+    }
+}

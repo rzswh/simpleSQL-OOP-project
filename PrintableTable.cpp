@@ -1,5 +1,5 @@
 #include "Table.h"
 
-ostream & PrintableTable::print() const {
+ostream & PrintableTable::print(ostream & out) const {
     // TODO: implement it
 }

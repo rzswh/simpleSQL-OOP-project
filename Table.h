@@ -17,7 +17,7 @@ class PrintableTable {
 public:
     PrintableTable(vector<Attribute> a):attrs(a) {}
     void insert(ValueBase ** vs) { data.push_back(vs); }
-    ostream & print() const;
+    ostream & print(ostream & out) const;
 };
 
 /**
@@ -78,4 +78,5 @@ public:
     PrintableTable * select(vector<string> attrFilter, WhereClause c);
     //
     virtual ~Table();
+    ostream & show(ostream & out) const;
 };
