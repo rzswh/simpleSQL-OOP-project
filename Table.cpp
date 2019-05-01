@@ -1,3 +1,4 @@
+// encodings=UTF-8
 #include "Table.h"
 
 Table::Table(string name, vector<Attribute> a, string primary)
@@ -16,8 +17,12 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
             if (attrNames[i] == attrs[j].name) {
                 // 检查是否指定了重复的属性
                 for (int k = 0; k < attrNames.size(); k ++) 
-                    if (attrNames[i]== attrNames[k])
+                    if (i != k && attrNames[i]== attrNames[k])
                         succ = false;
+                if (vals[i] == nullptr) {
+                    t[j] = vals[i];
+                    break;
+                }
                 switch (attrs[j].type)
                 {
                     case ATTR_INT:
@@ -53,12 +58,12 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
         if (!succ) break;
     }
     for (int i = 0; i < attrs.size(); i++) {
-        // notNull check(primary key is forced to be notNull)
+        // notNull 检查(主键强制非空)
         if (t[i] == nullptr && (attrs[i].notNull || primary == attrs[i].name)) {
             succ = false;
             break;
         }
-        // primary key
+        // 检查主键唯一性
         if (primary == attrs[i].name) {
             for (auto& j: data) {
                 if (*j[i] == *t[i]) {
@@ -70,15 +75,11 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
         if (!succ) break;
     }
     if (succ) data.push_back(std::move(t));
-    else {
-        for (int i = 0; i < attrs.size(); i++) 
-            delete t[i];
-    }
     return succ;
 }
 
 bool Table::del(WhereClause c) {
-    // select elements in a reverse order
+    // 逆序选择元素
     for (int i = data.size()-1; i>= 0; i-- ) {
         if (c.test(data[i], attrs)) {
             data.erase(data.begin() + i);
@@ -172,7 +173,7 @@ PrintableTable * Table::select(vector<string> attrFilter, WhereClause c) {
         auto nr = new ValueBase *[m];
         for (int i = 0, j = 0; i < n; i++) {
             if (j == m || attrs[i].name == newTableAttrs[j].name) {
-                nr[j] = r[i]->copy();
+                nr[j] = r[i] ? r[i]->copy() : r[i];
                 j++;
             }
         }
@@ -183,17 +184,36 @@ PrintableTable * Table::select(vector<string> attrFilter, WhereClause c) {
 
 ostream& Table::show(ostream & out) const {
     out << "Field\tType\tNull\tKey\tDefault\tExtra" << std::endl;
+    // 括号内的数字是显示宽度(int)/长度(char)/数字位数(double)
+    // P.S. 我刚知道CHAR是定长度字符串？而且默认长度是1？？
     for (auto i: attrs) {
         out << i.name << "\t";
         if (i.type == ATTR_CHAR) 
-            out << "CHAR";
+            out << "char(1)";
         else if (i.type == ATTR_INT) 
-            out << "INT";
+            out << "int(11)";
         else if (i.type == ATTR_DOUBLE) 
-            out << "DOUBLE";
+            out << "double(15)";
         else { /* undefined */}
         out << "\t";
         out << (i.notNull ? "NO" : "YES") << "\t" << (primary == i.name ? "PRI" : "") << "\t";
         out << "NULL\t" << std::endl;
+    }
+}
+
+// 以下代码仅供单元测试使用
+#include <iostream>
+using std::cout;
+using std::endl;
+void Table::test_print() {
+    int n = attrs.size();
+    for (int i = 0; i < n; i++) cout << attrs[i].name << "\t";
+    cout << endl;
+    for (auto & j: data) {
+        for (int i = 0; i < n; i++) {
+            if (j[i]) cout << (*j[i]);
+            cout << "\t";
+        }
+        cout << endl;
     }
 }

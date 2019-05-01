@@ -1,10 +1,6 @@
 #include "Attribute.h"
 #include <iostream>
 
-/**
- * Convert string form of attribute type into enum type to be used in constructing AttributeType.
- * @param s Attribute type. Upper case. Now only INT, CHAR and DOUBLE are accepted. 
- */ 
 AttributeType fromStringToAttrType(const string & s) {
     if (s == "INT")
         return ATTR_INT;

@@ -10,14 +10,14 @@ using std::string;
 using std::pair;
 
 
+enum ArithmicOperation { ARITH_GREATER, ARITH_LESS, ARITH_EQUAL };
+enum LogicOperation {LOGIC_AND, LOGIC_OR};
 /**
  * @encodings=utf-8
  * 将where子句的查询条件以逆波兰表达式的形式进行存储。
  * */
 class WhereClause {
 public:
-    enum ArithmicOperation { ARITH_GREATER, ARITH_LESS, ARITH_EQUAL };
-    enum LogicOperation {LOGIC_AND, LOGIC_OR};
     /**
      * SubSequence: where子句的基本组成单位，由NAME ARITH_OP VALUE形式组成; 最后一个元素是在表达式中的位置
      * */
@@ -33,7 +33,7 @@ public:
      * rank是将查询表达式改写为逆波兰表达式后各元素所在位置
      * 如果想构造一个表示student_name = "张三" and student_id < 2017012323 or student_gpa > 3.97的子句
      * 应当如下构造：
-     * vector<SubSentence> s; vector<pair<LogicOperation, int> > o;
+     * vector<WhereClause::SubSentence> s; vector<pair<LogicOperation, int> > o;
      * s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>("student_name", ARITH_EQUAL, new Value<string>("张三"), 0) ); // A
      * s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>("student_id", ARITH_LESS, new Value<int>(2017012323), 1) ); // B
      * s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>("student_gpa", ARITH_GREATER, new Value<double>(3.97), 3) ); // C
@@ -53,4 +53,6 @@ public:
      * 由于Record本身只包含数据，不包含每个数据对应的属性类型等信息，请把attributes传入。
      */
     bool test(const Record &, const vector<Attribute> &) const;
+
+    friend class TestWhereClause;
 };

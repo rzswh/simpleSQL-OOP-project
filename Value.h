@@ -1,5 +1,8 @@
+// encodings=UTF-8
 #pragma once
 
+#include <iostream>
+using std::ostream;
 /**
  * 数据库内所储存数据的抽象基类。
  */
@@ -10,6 +13,10 @@ public:
     virtual bool operator<(const ValueBase & v) const = 0;
     virtual ValueBase * copy() const = 0;
     virtual ~ValueBase() = 0;
+    virtual ostream & print(ostream & out) const = 0;
+    friend ostream & operator<<(ostream & out, ValueBase & v) {
+        return v.print(out); 
+    }
 };
 
 /**
@@ -38,5 +45,6 @@ public:
         return nptr && this->operator T() > T(*nptr);
     }
     Value<T> * copy() const override { return new Value<T>(v); }
+    ostream & print(ostream & out) const override { return out << v; }
     ~Value(){}
 };

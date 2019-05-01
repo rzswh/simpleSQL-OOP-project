@@ -18,6 +18,7 @@ public:
     PrintableTable(vector<Attribute> a):attrs(a) {}
     void insert(ValueBase ** vs) { data.push_back(vs); }
     ostream & print(ostream & out) const;
+    ~PrintableTable();
 };
 
 /**
@@ -79,4 +80,7 @@ public:
     //
     virtual ~Table();
     ostream & show(ostream & out) const;
+    // 以下供单元测试
+    friend class TestTable;
+    void test_print();
 };
