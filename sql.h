@@ -42,6 +42,7 @@ class SQLCreateTable: public SQL
 public:
 	SQLCreateTable(vector<string> sql);
 	string get_tb_name(){return table_name;}
+	string get_primary(){return primary;}
 	void set_tb_name(string name){table_name=name;}
 	vector<Attribute> GetAttributes(){return attrs;}
 	void SetAttributes(vector<Attribute> attr){attrs=attr;}
