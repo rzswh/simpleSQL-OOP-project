@@ -8,6 +8,7 @@ ostream & PrintableTable::print(ostream & out) const {
     for (auto & j: data) {
         for (int i = 0; i < n; i++) {
             if (j[i]) out << (*j[i]);
+            else out << "NULL";
             out << "\t";
         }
         out << endl;

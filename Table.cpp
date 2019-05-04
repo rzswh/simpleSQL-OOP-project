@@ -57,24 +57,35 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
         }
         if (!succ) break;
     }
+    int primaryIndex = 0;
     for (int i = 0; i < attrs.size(); i++) {
-        // notNull 检查(主键强制非空)
-        if (t[i] == nullptr && (attrs[i].notNull || primary == attrs[i].name)) {
-            succ = false;
-            break;
-        }
-        // 检查主键唯一性
         if (primary == attrs[i].name) {
+            primaryIndex = i;
+            // 检查主键唯一性
             for (auto& j: data) {
                 if (*j[i] == *t[i]) {
                     succ = false;
                     break;
                 }
             }
+            break;
+        }
+    }
+    for (int i = 0; i < attrs.size(); i++) {
+        // notNull 检查(主键强制非空)
+        if (t[i] == nullptr && (attrs[i].notNull || primaryIndex == i)) {
+            succ = false;
+            break;
         }
         if (!succ) break;
     }
-    if (succ) data.push_back(std::move(t));
+    // 根据要求，记录要按照主键排序
+    // （插入排序）
+    if (succ) {
+        auto iter = data.begin();
+        for (; iter != data.end() && *(*iter)[primaryIndex] < *t[primaryIndex]; iter++) ;
+        data.insert(iter, std::move(t));
+    }
     return succ;
 }
 
