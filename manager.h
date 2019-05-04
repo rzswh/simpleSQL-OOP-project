@@ -4,7 +4,7 @@
 #include <fstream>
 #include <vector>
 #include"sql.h"
-#include"Database.h"
+#include"DataBase.h"
 using namespace std;
 
 
