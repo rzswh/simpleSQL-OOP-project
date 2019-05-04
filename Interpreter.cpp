@@ -76,7 +76,7 @@ void Interpreter::GetSQLType()
 		to_lower(sql_vector[1]);
 		if (sql_vector[1] == "databases") { sql_type = 11; } /* SHOW DATABASES */
 		else if (sql_vector[1] == "tables") { sql_type = 12; } /* SHOW TABLES */
-		else sql_type=13;
+		else sql_type=13;/*SHOW COLUMNS*/
 	}
 	else if (sql_vector[0] == "drop")
 	{
@@ -113,7 +113,9 @@ void Interpreter::ParseSQL()
 			break;
 		case 13:
 		{
-			manager->ShowColumns();
+			SQLShowColumns *st = new SQLShowColumns(sql_vector);
+			manager->ShowColumns(*st);
+			delete st;
 		}
 
 		case 1:
