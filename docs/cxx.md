@@ -32,7 +32,7 @@
 
 ## manager.h
 ### class Manager：
-是管理全部database的数据类型
+包含一个database向量，是管理全部database的数据类型
 
 传入经过sql类型处理后的sql命令，调用相应函数，实现命令的要求
 ### 主要接口：
