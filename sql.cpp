@@ -65,6 +65,18 @@ void SQLCreateTable::Parse(vector<string> sql_vector)
 	}
 }
 
+/* -------------- SQLShowColumns -------------------- */
+SQLShowColumns::SQLShowColumns(vector<string> sql_vector) { Parse(sql_vector); }
+
+string SQLShowColumns::get_tb_name() { return tb_name; }
+
+void SQLDropTable::Parse(vector<string> sql_vector)
+{
+	sql_type = 13;
+	tb_name = sql_vector[3];
+}
+
+
 /* -------------- SQLDropDatabase ----------------- */
 SQLDropDatabase::SQLDropDatabase(vector<string> sql_vector) { Parse(sql_vector); }
 
@@ -90,6 +102,8 @@ void SQLDropTable::Parse(vector<string> sql_vector)
 	sql_type = 4;
 	tb_name = sql_vector[2];
 }
+
+
 
 /* -------------- SQLUse ----------------- */
 SQLUse::SQLUse(vector<string> sql_vector) { Parse(sql_vector); }
