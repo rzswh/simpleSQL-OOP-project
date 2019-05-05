@@ -1,4 +1,5 @@
 #include"manager.h"
+#include<algorithm>
 
 // #define DEBUG
 
@@ -47,9 +48,11 @@ void Manager::ShowDatabases()
 		cout << "Use 'create DataBase' command to create a new DataBase." << endl;
 		return;
 	}
-	//cout<< "The number of databases is "<<num<<endl;
-	for (int i=0; i<num; i++)
-		cout<</*i<<":"<<*/databases[i].name << endl;
+	cout<< "Database"<<endl;
+	vector<string> output;
+	for (int i=0; i<num; i++) output.push_back(databases[i].name);
+	std::sort(output.begin(), output.end());
+	for (auto &i: output) cout<< i << endl;
 }
 
 void Manager::ShowTables()
@@ -63,10 +66,17 @@ void Manager::ShowTables()
 		cout << "Use 'create table' command to create a new table." << endl;
 		return;
 	}
-	cout << "| " << setw(22) << "Tables_in_"+ current_db << " |" << endl;
-	
-	for (auto tb = db->GetTables().begin(); tb != db->GetTables().end(); tb++)
-		cout << "| " << setw(22) << (*tb)->name << " |" << endl;
+	// cout << "| " << setw(22) << "Tables_in_"+ current_db << " |" << endl;
+	cout << "Tables_in_" << current_db << endl;
+
+	vector<string> output;
+	auto tables = db->GetTables();
+	for (auto tb = tables.begin(); tb != tables.end(); tb++)
+		output.push_back((*tb)->name);
+	std::sort(output.begin(), output.end());
+	for (auto &i: output) cout<< i << endl;
+	// for (auto tb = db->GetTables().begin(); tb != db->GetTables().end(); tb++)
+	// 	cout << "| " << setw(22) << (*tb)->name << " |" << endl;
 	
 }
 

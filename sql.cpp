@@ -101,31 +101,32 @@ void SQLCreateTable::Parse(vector<string> sql_vector)
 	pos ++;
 
 	if (sql_vector[pos] != "(") return;
-	pos ++;
+	// pos ++;
 
 	bool is_attr = true;
 	bool has_primary_key = false;
 
-	while (is_attr)
+	while (sql_vector[pos] != ")")
 	{
-		is_attr = false;
+		// is_attr = false;
+		pos++;
 		
 		if (to_lower(sql_vector[pos]) != "primary" || to_lower(sql_vector[pos+1]) != "key")
 		{
 			bool notnull=false;
-			if(sql_vector[pos+2]!=",")
+			if(pos + 4 <= sql_vector.size() && to_lower(sql_vector[pos+2])=="not" && to_lower(sql_vector[pos+3])=="null")
 				notnull=true;
 			Attribute attr(sql_vector[pos],to_upper(sql_vector[pos+1]),notnull);
 			attrs.push_back(attr);
 
-			if(notnull) pos+=5;
-			else pos+=3;
-			if (sql_vector[pos] != ")") is_attr = true;
+			if(notnull) pos+=4; // [name] [type] not null -> ,/)
+			else pos+=2; // [name] [type] -> ,/)
+			// if (sql_vector[pos] != ")") is_attr = true;
 		}
 		else  /* primary key */
 		{
 			if (has_primary_key) return;
-			pos +=3;
+			pos +=3; // primary key ( -> [name]
 			primary=sql_vector[pos];
 			/*for (auto att = attrs.begin(); att != attrs.end() ; att++)
 			{
@@ -134,7 +135,7 @@ void SQLCreateTable::Parse(vector<string> sql_vector)
 					(*att).type=1;//设定为主键
 				}
 			}*/
-			pos +=2;
+			pos +=2; // [name] ) -> ,/)
 			has_primary_key = true;
 		}
 	}

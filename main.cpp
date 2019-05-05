@@ -20,5 +20,6 @@ int main()
         if (!cin) break;
 		interpreter.SQL(sqlsentence);
 	}
+	//cout << (Value<int>(4) == Value<double>(4.0)) << endl;
 	return 0;
 }
