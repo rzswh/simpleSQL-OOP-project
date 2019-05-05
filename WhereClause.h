@@ -45,10 +45,6 @@ public:
     WhereClause(const vector<SubSentence> & s, const vector<pair<LogicOperation, int> > & o):subsentences(s), operation(o){};
     ~WhereClause() = default;
     /**
-     * 中缀表达式转逆波兰表达式。
-     * */
-    static WhereClause buildFrom(vector<string>);
-    /**
      * 测试给定的Record是否满足whereClause的选择条件。
      * 由于Record本身只包含数据，不包含每个数据对应的属性类型等信息，请把attributes传入。
      */

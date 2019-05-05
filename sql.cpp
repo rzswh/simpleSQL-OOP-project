@@ -246,7 +246,7 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 		}
 		else{
 			attrFilter.push_back(sql_vector[pos++]);
-			if(sql_vector[pos]=="from") break;
+			if(to_lower(sql_vector[pos])=="from") break;
 			pos++;
 		}
 	}

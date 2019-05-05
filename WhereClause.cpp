@@ -2,44 +2,6 @@
 #include "WhereClause.h"
 #include <stack>
 
-WhereClause * buildFrom(vector<string> sql_vector) {
-    vector<pair<LogicOperation, int> > o;
-    vector<WhereClause::SubSentence> s; 
-    int pos = 0;
-	std::stack<LogicOperation> ss;
-	int rank=0;
-	while (true)
-	{
-		if(sql_vector[pos]=="and"||"or"){
-            // 这是表达式转换??????????
-			if(ss.size()){
-				LogicOperation tt=ss.top();
-				ss.pop();
-				o.push_back(std::make_pair(tt,rank++));
-            }
-			if(sql_vector[pos]=="and")
-			    ss.push(LOGIC_AND);
-			else ss.push(LOGIC_OR);
-		}
-
-		else{
-			string key = sql_vector[pos];
-            pos++;
-			ArithmicOperation ar;
-			if (sql_vector[pos] == "<") ar = ARITH_LESS;
-			else if (sql_vector[pos] == "=") ar = ARITH_EQUAL;
-			else if (sql_vector[pos] == ">") ar = ARITH_GREATER;
-			pos ++;
-			ValueBase * vb = stringToValue(sql_vector[pos]);
-			s.push_back( make_tuple(key, ar,vb,rank++)); // C
-			pos++;
-	    }
-		pos++;
-		if (sql_vector[pos] == ";") break; /* one where condition, break. */
-	}
-    return nullptr;
-}
-
 bool WhereClause::test(const Record & r, const vector<Attribute> & va) const {
     vector<bool> res;
     // 用lambda函数简化代码
