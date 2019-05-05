@@ -8,9 +8,9 @@
 using namespace std;
 
 
-
-/*Manager类是管理database的数据类型*/
-
+/*Database 类是具有表存取功能的数据库类型，暂时未定义，应修改为相应类型
+ *Manager类是管理database的数据类型
+ *getTB(string name)为Database类中函数，获取指向名为name的表的指针*/
 
 class Manager{
 public:
