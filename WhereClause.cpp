@@ -5,15 +5,24 @@
 bool WhereClause::test(const Record & r, const vector<Attribute> & va) const {
     vector<bool> res;
     // 用lambda函数简化代码
-    auto check = [](SubSentence s, const ValueBase * v, bool & flag) -> bool {
+    auto check = [](SubSentence s, const ValueBase * v, bool & flag, AttributeType tp) -> bool {
+        ValueBase * sv = nullptr;
+        ValueBase * nv = const_cast<ValueBase *>(v);
+        if (tp == ATTR_CHAR) {
+            sv = convert<string>(std::get<2>(s));
+            v = convert<string>(const_cast<ValueBase*>(v));
+        } else if (tp == ATTR_DOUBLE || tp == ATTR_INT) {
+            sv = convert<double>(std::get<2>(s));
+            v = convert<double>(const_cast<ValueBase*>(v));
+        }
         if (std::get<1>(s) == ARITH_GREATER) {
-            return v && *v > *std::get<2>(s);
+            return v && *v > *sv;
         }
         else if (std::get<1>(s) == ARITH_LESS) {
-            return v && *v < *std::get<2>(s);
+            return v && *v < *sv;
         }
         else if (std::get<1>(s) == ARITH_EQUAL) {
-            return v && *v == *std::get<2>(s);
+            return v && *v == *sv;
         }
         else {/* undefined */}
         flag = false;
@@ -25,7 +34,7 @@ bool WhereClause::test(const Record & r, const vector<Attribute> & va) const {
         bool result;
         for (int j = 0; j < va.size(); j++) {
             if (va[j].name == std::get<0>(i)) {
-                result = check(i, r[j], flag);
+                result = check(i, r[j], flag, va[j].type);
                 if (!flag) return false;
                 break;
             }
