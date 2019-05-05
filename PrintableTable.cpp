@@ -2,6 +2,7 @@
 
 using std::endl;
 ostream & PrintableTable::print(ostream & out) const {
+    if (data.empty()) return out;
     int n = attrs.size();
     for (int i = 0; i < n; i++) out << attrs[i].name << "\t";
     out << endl;
@@ -13,6 +14,7 @@ ostream & PrintableTable::print(ostream & out) const {
         }
         out << endl;
     }
+    return out;
 }
 
 PrintableTable::~PrintableTable() {

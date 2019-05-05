@@ -1,9 +1,79 @@
 #include"sql.h"	
 #include<stack>
 
+//#define DEBUG
+
 string to_lower(string str){
 	transform(str.begin(),str.end(),str.begin(),::tolower);
 	return str;
+}
+string to_upper(string str){
+	transform(str.begin(),str.end(),str.begin(),::toupper);
+	return str;
+}
+
+int buildWhereClauseFrom(vector<string> sql_vector, 
+		vector<pair<LogicOperation, int> > &o,
+		vector<WhereClause::SubSentence> &s,
+		int pos = 0) {
+	std::stack<LogicOperation> ss;
+	int rank=0;
+	pos++;
+	while (true)
+	{
+		auto logicPriority = [](LogicOperation o)->int {
+			if (o == LOGIC_AND) return 1;
+			else if (o == LOGIC_OR) return 0;
+			return -233; // undefined
+		};
+		#ifdef DEBUG
+		cout <<  "[debug] " << sql_vector[pos] << endl;
+		#endif
+		string lo_str = to_lower(sql_vector[pos]);
+		if(lo_str=="and"||lo_str=="or"){
+			LogicOperation lo;
+			if (lo_str == "and")
+				lo = LOGIC_AND;
+			else if (lo_str == "or") 
+				lo = LOGIC_OR;
+			else {
+				// wrong input
+				break;
+			}
+			while(ss.size()){
+				LogicOperation tt=ss.top();
+				if (logicPriority(tt) < logicPriority(lo))
+					break;
+				ss.pop();
+				o.push_back(std::make_pair(tt,rank++));
+            }
+			ss.push(lo);
+			pos++;
+		}
+		else{
+			string key = sql_vector[pos];
+            pos++;
+			ArithmicOperation ar;
+			if (sql_vector[pos] == "<") ar = ARITH_LESS;
+			else if (sql_vector[pos] == "=") ar = ARITH_EQUAL;
+			else if (sql_vector[pos] == ">") ar = ARITH_GREATER;
+			pos ++;
+			ValueBase * vb = stringToValue(sql_vector[pos]);
+			s.push_back( make_tuple(key, ar,vb,rank++)); // C
+			pos++;
+	    }
+		if (sql_vector[pos] == ";") break; /* one where condition, break. */
+	}
+	while (!ss.empty() ) {
+		o.push_back(std::make_pair(ss.top(),rank++));
+		ss.pop();
+	}
+	#ifdef DEBUG
+	cout << "[debug] where clause build info: " << endl;
+	cout << s.size() << " "; for (auto i: s) cout << std::get<3>(i) << " "; cout << endl;
+	cout << o.size() << " "; for (auto i: o) cout << i.second << " "; cout << endl;
+	#endif
+	return pos;
 }
 
 /* -------------- SQLCreateDatabase ----------------- */
@@ -40,12 +110,12 @@ void SQLCreateTable::Parse(vector<string> sql_vector)
 	{
 		is_attr = false;
 		
-		if (sql_vector[pos] != "primary")
+		if (to_lower(sql_vector[pos]) != "primary" || to_lower(sql_vector[pos+1]) != "key")
 		{
 			bool notnull=false;
 			if(sql_vector[pos+2]!=",")
 				notnull=true;
-			Attribute attr(sql_vector[pos],sql_vector[pos+1],notnull);
+			Attribute attr(sql_vector[pos],to_upper(sql_vector[pos+1]),notnull);
 			attrs.push_back(attr);
 
 			if(notnull) pos+=5;
@@ -134,7 +204,7 @@ void SQLInsert::Parse(vector<string> sql_vector)
 	unsigned int pos = 2;
 	bool is_attr = true;
 	tb_name = sql_vector[pos];
-	pos =+2;
+	pos +=2;
 	int num=0;
 	while (is_attr)
 	{
@@ -146,28 +216,16 @@ void SQLInsert::Parse(vector<string> sql_vector)
 		pos ++;
 	}
 
-	pos=+2;
 	for(int i=0;i<num;i++)
 	{
-		string tmp=sql_vector[pos];
-		if(tmp[0]=='\"'){
-			char ttt[20];int kk=1;
-			for(;tmp[kk]!='\"';kk++)
-				ttt[kk-1]=tmp[kk];
-			ttt[kk]='\0';
-			Value<string> tt(ttt);
-			vals.push_back(&tt);
-		}
-		else if(tmp.find('.')==string::npos){
-			Value<double> tt(atof(tmp.c_str()));		//string 转 double	
-			vals.push_back(&tt);
-		}
-		else {int ttt=atoi(tmp.c_str());
-			Value<int> tt(ttt);
-			vals.push_back(&tt);
 		pos+=2;
-		}	
+		vals.push_back(stringToValue(sql_vector[pos]));
 	}
+}
+
+SQLInsert::~SQLInsert () {
+	for (auto i: vals) delete i;
+	vals.clear();
 }
 
 /* ---------------- SQLSelect ----------------- */
@@ -180,64 +238,27 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 	sql_type = 7;
 	unsigned int pos = 1;
 	while(true){
-		if(sql_vector[pos]=="*") {attrFilter.push_back("*");break;}
+		if(sql_vector[pos]=="*") {
+			attrFilter.push_back("*");
+			pos++;
+			break;
+		}
 		else{
 			attrFilter.push_back(sql_vector[pos++]);
 			if(sql_vector[pos]=="from") break;
 			pos++;
 		}
 	}
-	pos++;
+	pos++; // from -> [table_name]
 	tb_name = sql_vector[pos];
-	pos++;
-	if (sql_vector.size() == pos) return; /* sql statement like: "select * from tb;". */
-	pos ++;
-	
-	stack<LogicOperation> ss;
-	int rank=0;
-	while (true)
-	{
-		if(sql_vector[pos]=="and"||"or"){
-			if(ss.size()){
-				LogicOperation tt=ss.top();
-				ss.pop();
-				o.push_back(make_pair(tt,rank++));}
-			if(sql_vector[pos]=="and")
-			ss.push(LOGIC_AND);
-			else ss.push(LOGIC_OR);
-		}
+	pos++; // [table_name] -> ; / where
+	if (sql_vector.size() == pos + 1) return; /* sql statement like: "select * from tb;". */
+	pos = buildWhereClauseFrom(sql_vector, o, s, pos);
+}
 
-		else{
-		string key;
-		ArithmicOperation ar;
-		ValueBase * vb;
-		key = sql_vector[pos];
-		pos ++;
-		if (sql_vector[pos] == "<") ar = ARITH_LESS;
-		else if (sql_vector[pos] == "=") ar = ARITH_EQUAL;
-		else if (sql_vector[pos] == ">") ar = ARITH_GREATER;
-		pos ++;
-
-		string tmp=sql_vector[pos];
-		if(tmp[0]=='\"'){char ttt[20];int kk=1;
-			for(;tmp[kk]!='\"';kk++)
-				ttt[kk-1]=tmp[kk];
-			ttt[kk]='\0';
-			vb=new Value<string>(ttt);
-		}
-		else if(tmp.find('.')==string::npos){
-			vb=new Value<double>(atof(tmp.c_str()));
-		}
-		else {int ttt=atoi(tmp.c_str());
-		vb=new Value<int>(ttt);}
-		
-	    s.push_back( make_tuple(key, ar,vb,rank++)); // C
-		
-	}
-		pos++;
-		if (sql_vector[pos] == ";") break; /* one where condition, break. */
-	}
-
+SQLSelect::~SQLSelect() {
+	for (auto i: s) 
+		delete std::get<2>(i);
 }
 
 
@@ -254,52 +275,13 @@ void SQLDelete::Parse(vector<string> sql_vector)
 	tb_name = sql_vector[pos];
 	pos ++;
 	
-	if (sql_vector.size() == pos) return; /* sql statement like: "delete from tb;". */
-	pos ++;
-	stack<LogicOperation> ss;
-	int rank=0;
-	while (true)
-	{
-		if(sql_vector[pos]=="and"||"or"){
-			if(ss.size()){
-				LogicOperation tt=ss.top();
-				ss.pop();
-				o.push_back(make_pair(tt,rank++));}
-			if(sql_vector[pos]=="and")
-			ss.push(LOGIC_AND);
-			else ss.push(LOGIC_OR);
-		}
+	if (sql_vector.size() == pos + 1) return; /* sql statement like: "delete from tb;". */
+	pos = buildWhereClauseFrom(sql_vector, o, s, pos);
+}
 
-		else{
-		string key;
-		ArithmicOperation ar;
-		ValueBase * vb;
-		key = sql_vector[pos];
-		pos ++;
-		if (sql_vector[pos] == "<") ar = ARITH_LESS;
-		else if (sql_vector[pos] == "=") ar = ARITH_EQUAL;
-		else if (sql_vector[pos] == ">") ar = ARITH_GREATER;
-		pos ++;
-
-		string tmp=sql_vector[pos];
-		if(tmp[0]=='\"'){char ttt[20];int kk=1;
-			for(;tmp[kk]!='\"';kk++)
-				ttt[kk-1]=tmp[kk];
-			ttt[kk]='\0';
-			vb=new Value<string>(ttt);
-		}
-		else if(tmp.find('.')==string::npos){
-			vb=new Value<double>(atof(tmp.c_str()));
-		}
-		else {int ttt=atoi(tmp.c_str());
-		vb=new Value<int>(ttt);}
-		
-	    s.push_back( make_tuple(key, ar,vb,rank++)); // C
-		
-	}
-		pos++;
-		if (sql_vector[pos] == ";") break; /* one where condition, break. */
-	}
+SQLDelete::~SQLDelete() {
+	for (auto i: s) 
+		delete std::get<2>(i);
 }
 
 /* ---------------  SQLUpdate ----------------*/
@@ -319,75 +301,17 @@ void SQLUpdate::Parse(vector<string> sql_vector)
 	{
 		attrNames.push_back(sql_vector[pos]);
 		pos +=2;
-		string tmp=sql_vector[pos];
-		ValueBase *vb;
-		if(tmp[0]=='\"'){char ttt[20];int kk=1;
-			for(;tmp[kk]!='\"';kk++)
-				ttt[kk-1]=tmp[kk];
-			ttt[kk]='\0';
-			vb=new Value<string>(ttt);
-		}
-
-		else if(tmp.find('.')==string::npos){
-			vb=new Value<double>(atof(tmp.c_str()));
-		}
-		else {int ttt=atoi(tmp.c_str());
-		vb=new Value<int>(ttt);}
-		
-		vals.push_back(vb);
-
+		vals.push_back(stringToValue(sql_vector[pos]));
+		//vals.back()->print(cout << "[debug] ") << " " << sql_vector[pos] << endl;
 		pos ++;
 
 		if (sql_vector[pos] == ",") pos ++;
 		else if (to_lower(sql_vector[pos]) == "where") break;
 	}
-	pos ++;
+	pos = buildWhereClauseFrom(sql_vector, o, s, pos);
+}
 
-	stack<LogicOperation> ss;
-	int rank=0;
-	while (true)
-	{
-		if(sql_vector[pos]=="and"||"or"){
-			if(ss.size()){
-				LogicOperation tt=ss.top();
-				ss.pop();
-				//o.push_back(make_pair<LogicOperation, int>(tt,rank++));
-				o.push_back(make_pair(tt,rank++));}
-			if(sql_vector[pos]=="and")
-			ss.push(LOGIC_AND);
-			else ss.push(LOGIC_OR);
-		}
-
-		else{
-		string key;
-		ArithmicOperation ar;
-		ValueBase * vb;
-		key = sql_vector[pos];
-		pos ++;
-		if (sql_vector[pos] == "<") ar = ARITH_LESS;
-		else if (sql_vector[pos] == "=") ar = ARITH_EQUAL;
-		else if (sql_vector[pos] == ">") ar = ARITH_GREATER;
-		pos ++;
-
-		string tmp=sql_vector[pos];
-		if(tmp[0]=='\"'){char ttt[20];int kk=1;
-			for(;tmp[kk]!='\"';kk++)
-				ttt[kk-1]=tmp[kk];
-			ttt[kk]='\0';
-			vb=new Value<string>(ttt);
-		}
-
-		else if(tmp.find('.')==string::npos){
-			vb=new Value<double>(atof(tmp.c_str()));
-		}
-		else {int ttt=atoi(tmp.c_str());
-		vb=new Value<int>(ttt);}
-		
-	    // s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>(key, ar,vb,rank++)); // C
-	    s.push_back( make_tuple(key, ar,vb,rank++)); // C
-		
-	}
-		pos++;
-		if (sql_vector[pos] == ";") break; /* one where condition, break. */
-	}
+SQLUpdate::~SQLUpdate() {
+	for (auto i: s) 
+		delete std::get<2>(i);
 }

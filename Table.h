@@ -29,6 +29,7 @@ class Table {
 private:
     vector<Record> data;
     bool checkType(AttributeType att, ValueBase * v);
+    string errMsg;
 public:
     const string name;
     const vector<Attribute> attrs;
@@ -80,7 +81,8 @@ public:
     //
     virtual ~Table();
     ostream & show(ostream & out) const;
-    // 以下供单元测试
+    // 以下供测试
     friend class TestTable;
     void test_print();
+    string getErrorMsg() { return errMsg; }
 };

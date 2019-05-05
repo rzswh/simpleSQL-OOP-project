@@ -107,15 +107,26 @@ bool Table::checkType(AttributeType att, ValueBase * v) {
         return false;
     return true;
 }
+//#define DEBUG
+#ifdef DEBUG
+#include <iostream>
+#endif
 bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClause c) {
     // 类型匹配，非空检查
     for (int j = 0; j < attrNames.size(); j++) {
         for (int k = 0; k < attrs.size(); k++) {
             if (attrNames[j] == attrs[k].name) {
-                if (!checkType(attrs[k].type, vals[j]))
+                if (!checkType(attrs[k].type, vals[j])) {
+                    errMsg = "Incompatible type.";
+                    #ifdef DEBUG
+                    vals[j]->print(std::cout);
+                    #endif
                     return false;
-                if (attrs[k].notNull && vals[j] == nullptr) 
+                }
+                if (attrs[k].notNull && vals[j] == nullptr) {
+                    errMsg = "Null where it should be not null.";
                     return false;
+                }
                 break;
             }
         }
@@ -148,7 +159,10 @@ bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClau
         }
         if (primaryValue && primaryCount > 1) break;
     }
-    if (primaryValue && primaryCount > 1) return false;
+    if (primaryValue && primaryCount > 1) {
+        errMsg = "Duplicated primary value.";
+        return false;
+    }
     for (auto i: updateList) {
         for (int j = 0; j < attrNames.size(); j++) {
             for (int k = 0; k < attrs.size(); k++) {

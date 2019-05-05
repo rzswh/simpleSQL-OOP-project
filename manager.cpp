@@ -1,14 +1,18 @@
 #include"manager.h"
 
+// #define DEBUG
 
 Manager::Manager():num(0){}
 
 
 void Manager::CreateDatabase(SQLCreateDatabase& statement){
+	#ifdef DEBUG
 	cout << "Creating DataBase: " << statement.get_db_name() << endl;
+	#endif
 	//DataBase *temp=new DataBase(statement.get_db_name());//此处应修改为相应构造函数
 	//databases.push_back(*temp);
 	databases.push_back(DataBase(statement.get_db_name()));
+	//cout << (databases.back()).name << "---" << endl;
 	num++;
 }
 
@@ -26,7 +30,9 @@ DataBase* Manager::GetDB(string db){
 	return NULL;
 }
 void Manager::CreateTable(SQLCreateTable& statement){
+	#ifdef DEBUG
 	cout << "Creating table: " << statement.get_tb_name() << endl;
+	#endif
 
 	DataBase *db = GetDB();
 	db->CreateTable(statement);
@@ -41,9 +47,9 @@ void Manager::ShowDatabases()
 		cout << "Use 'create DataBase' command to create a new DataBase." << endl;
 		return;
 	}
-	cout<< "The number of databases is"<<num<<endl;
+	//cout<< "The number of databases is "<<num<<endl;
 	for (int i=0; i<num; i++)
-		cout<<i<<":"<<databases[i].name << endl;
+		cout<</*i<<":"<<*/databases[i].name << endl;
 }
 
 void Manager::ShowTables()
@@ -76,16 +82,25 @@ void Manager::ShowColumns(SQLShowColumns &statement){
 	}
 	Table *tb=db->getTB(statement.get_tb_name());
 	/*列出制定表项的各项信息，包括属性、属性类型、主键 信息。*/
-	cout<<tb;
+	tb->show(cout);
 
 }
 
 
 void Manager::DropDatabase(SQLDropDatabase& statement)
 {
+	#ifdef DEBUG
 	cout << "Droping DataBase: " << statement.get_db_name() << endl;
+	#endif
 	
 	//to be finished: delete statement.get_db_name; 
+	for (auto iter = databases.begin(); iter != databases.end(); iter++) {
+		if (iter->name == statement.get_db_name()) {
+			databases.erase(iter);
+			num--;
+			break;
+		}
+	}
 	
 	if (statement.get_db_name() == current_db){
 		current_db = "";
@@ -94,7 +109,9 @@ void Manager::DropDatabase(SQLDropDatabase& statement)
 
 void Manager::DropTable(SQLDropTable& statement)
 {
+	#ifdef DEBUG
 	cout << "Droping table: " << statement.get_tb_name() << endl;
+	#endif
 	if (current_db.length() == 0) return;
 
 	DataBase *db = GetDB();
@@ -121,7 +138,14 @@ void Manager::Insert(SQLInsert& statement)
 	
 	string tb_name=statement.get_tb_name();
 	Table *tb=db->getTB(tb_name);
-	tb->insert(statement.attrNames,statement.vals);
+	#ifdef DEBUG
+	cout << "Item Info: ***" << endl;
+	for (auto i: statement.attrNames) cout << i << " "; cout << endl;
+	for (auto i: statement.vals) (i->print(cout)) << " "; cout << endl << "*****" << endl;
+	#endif
+	if (!tb->insert(statement.attrNames,statement.vals)) {
+		cout << "Insertion failed. " << endl;
+	}
 }
 
 void Manager::Select(SQLSelect& statement)
@@ -130,7 +154,7 @@ void Manager::Select(SQLSelect& statement)
 	Table *tb = GetDB()->getTB(statement.get_tb_name());
 	if (tb == NULL) return;
 	WhereClause c(statement.s,statement.o);
-	tb->select(statement.attrFilter,c);	
+	tb->select(statement.attrFilter,c)->print(cout);
 }
 
 void Manager::Delete(SQLDelete& statement)
@@ -151,5 +175,7 @@ void Manager::Update(SQLUpdate& statement)
 	Table *tb = db->getTB(statement.get_tb_name());
 	if (tb == NULL) return;
 	WhereClause c(statement.s,statement.o);
-	tb->update(statement.attrNames,statement.vals,c);
+	if (!tb->update(statement.attrNames,statement.vals,c) ) {
+		cout << "Updating failed. Error Meesage: " << tb->getErrorMsg() << endl;
+	}
 }

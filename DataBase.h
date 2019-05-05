@@ -13,10 +13,8 @@ public:
 	void DropTable(string name);
 	Table* getTB(string name);
 	DataBase(const DataBase &) = delete;
-	DataBase(DataBase && d) {
-		tables = d.tables;
-		d.tables.clear();
-	}
+	DataBase(DataBase && d);
+	DataBase & operator=(DataBase && d);
 	vector<Table*> GetTables();
 	~DataBase();
 	const string name;

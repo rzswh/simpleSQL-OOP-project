@@ -17,6 +17,7 @@ int main()
 	while (true)
 	{
 		cin.getline(sqlsentence,200);
+        if (!cin) break;
 		interpreter.SQL(sqlsentence);
 	}
 	return 0;

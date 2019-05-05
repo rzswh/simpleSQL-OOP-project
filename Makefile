@@ -1,4 +1,4 @@
-.PHONY: clean
+.PHONY: clean debug
 
 all: main
 
@@ -7,6 +7,9 @@ HEADER = WhereClause.h DataBase.h Table.h Value.h Attribute.h sql.h Interpreter.
 
 main: main.cpp $(HEADER) $(OBJ)
 	g++ -o main main.cpp $(OBJ) -std=c++11
+
+debug: main.cpp $(HEADER) $(OBJ)
+	g++ -o main main.cpp $(OBJ) -std=c++11 -g
 
 Value.o: Value.cpp Value.h
 	g++ -c $*.cpp -o $*.o

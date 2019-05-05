@@ -9,6 +9,14 @@
 using namespace std;
 
 string to_lower(string str);
+string to_upper(string str);
+/**
+ * 语句被切割后放在sql_vector中，本函数将sql_vector中从pos下标开始的where子句转换为其组成要素。
+ */ 
+int buildWhereClauseFrom(vector<string> sql_vector, 
+		vector<pair<LogicOperation, int> > &o,
+		vector<WhereClause::SubSentence> &s,
+		int pos);
 
 class SQL{
 public:
@@ -101,6 +109,7 @@ class SQLInsert: public SQL
 {
 public:
 	SQLInsert(vector<string> sql);
+	~SQLInsert();
 	string get_tb_name();
 	void Parse(vector<string> sql);
 	vector<string> attrNames;
@@ -118,6 +127,7 @@ public:
 	vector<string> attrFilter;
 	vector<WhereClause::SubSentence> s; 
 	vector<pair<LogicOperation, int> > o;
+	~SQLSelect();
 private:
 	string tb_name;
 };
@@ -130,12 +140,11 @@ public:
 	void Parse(vector<string> sql);
 	vector<WhereClause::SubSentence> s; 
 	vector<pair<LogicOperation, int> > o;
+	~SQLDelete();
 private:
 	string tb_name;
 	
 };
-
-
 
 class SQLUpdate: public SQL
 {
@@ -147,6 +156,7 @@ public:
 	vector<ValueBase *> vals;
 	vector<WhereClause::SubSentence> s; 
 	vector<pair<LogicOperation, int> > o;
+	~SQLUpdate();
 private:
 	string tb_name;
 };

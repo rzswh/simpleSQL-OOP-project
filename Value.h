@@ -2,7 +2,9 @@
 #pragma once
 
 #include <iostream>
+#include <string>
 using std::ostream;
+using std::string;
 /**
  * 数据库内所储存数据的抽象基类。
  */
@@ -48,3 +50,5 @@ public:
     ostream & print(ostream & out) const override { return out << v; }
     ~Value(){}
 };
+
+ValueBase * stringToValue(string);
