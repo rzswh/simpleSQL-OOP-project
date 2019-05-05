@@ -26,6 +26,7 @@ ValueBase * stringToValue(string tmp) {
 	} 
 	else if(tmp.find('.')!=string::npos){
 		vb = new Value<double>(stolld(tmp));
+		//vb = new Value<double>(0);
 	}
 	else {
 		int ttt=atoi(tmp.c_str());

@@ -20,7 +20,7 @@ bool seg(char c){
 void Interpreter::SplitSQL(string statement)
 {
 	char* cstr = const_cast<char*>(statement.c_str());
-	char current[20];
+	char current[256];
 	int i=0,j=0;
 	while(i<statement.size()){
 		if(statement[i]==' ') {
