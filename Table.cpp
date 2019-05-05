@@ -247,6 +247,7 @@ ostream& Table::show(ostream & out) const {
 }
 
 // 以下代码仅供单元测试使用
+/*
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -261,4 +262,4 @@ void Table::test_print() {
         }
         cout << endl;
     }
-}
+}*/

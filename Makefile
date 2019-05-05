@@ -2,7 +2,7 @@
 
 all: main
 
-OBJ = WhereClause.o DataBase.o Table.o Value.o Attribute.o PrintableTable.o sql.o Interpreter.o UnitTest.o manager.o
+OBJ = WhereClause.o DataBase.o Table.o Value.o Attribute.o PrintableTable.o sql.o Interpreter.o manager.o
 HEADER = WhereClause.h DataBase.h Table.h Value.h Attribute.h sql.h Interpreter.h Record.h manager.h
 ARGS = -std=c++11
 
@@ -37,9 +37,6 @@ WhereClause.o: WhereClause.cpp WhereClause.h Value.h
 	g++ -c $*.cpp -o $*.o $(ARGS)
 
 Table.o: Table.cpp Attribute.h WhereClause.h Value.h Record.h
-	g++ -c $*.cpp -o $*.o $(ARGS)
-
-UnitTest.o: UnitTest.cpp UnitTest.h $(HEADER)
 	g++ -c $*.cpp -o $*.o $(ARGS)
 
 clean:

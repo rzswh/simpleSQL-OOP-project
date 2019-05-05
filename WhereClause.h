@@ -54,5 +54,5 @@ public:
      */
     bool test(const Record &, const vector<Attribute> &) const;
 
-    friend class TestWhereClause;
+    // friend class TestWhereClause;
 };
