@@ -1,5 +1,6 @@
 // encodings=UTF-8
 #include "Table.h"
+#include <algorithm>
 
 Table::Table(string name, vector<Attribute> a, string primary)
         :name(name), attrs(a), primary(primary) 
@@ -27,26 +28,20 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
                 {
                     case ATTR_INT:
                     {
-                        auto intv = dynamic_cast<Value<int>* >(vals[i]);
-                        if (intv) {
-                            t[j] = new Value<int>(int(*intv));
-                        } else succ = false;
+                        t[j] = convert<int>(vals[i]);
+                        if (vals[i] && !t[j]) succ = false;
                         break;
                     }
                     case ATTR_DOUBLE:
                     {
-                        auto doublev = dynamic_cast<Value<double>* >(vals[i]);
-                        if (doublev) {
-                            t[j] = new Value<double>(double(*doublev));
-                        } else succ = false;
+                        t[j] = convert<double>(vals[i]);
+                        if (vals[i] && !t[j]) succ = false;
                         break;
                     }
                     case ATTR_CHAR:
                     {
-                        auto charv = dynamic_cast<Value<string>* >(vals[i]);
-                        if (charv) {
-                            t[j] = new Value<string>(string(*charv));
-                        } else succ = false;
+                        t[j] = convert<string>(vals[i]);
+                        if (vals[i] && !t[j]) succ = false;
                         break;
                     }
                     default:
@@ -57,24 +52,35 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
         }
         if (!succ) break;
     }
+    int primaryIndex = 0;
     for (int i = 0; i < attrs.size(); i++) {
-        // notNull 检查(主键强制非空)
-        if (t[i] == nullptr && (attrs[i].notNull || primary == attrs[i].name)) {
-            succ = false;
-            break;
-        }
-        // 检查主键唯一性
         if (primary == attrs[i].name) {
+            primaryIndex = i;
+            // 检查主键唯一性
             for (auto& j: data) {
                 if (*j[i] == *t[i]) {
                     succ = false;
                     break;
                 }
             }
+            break;
+        }
+    }
+    for (int i = 0; i < attrs.size(); i++) {
+        // notNull 检查(主键强制非空)
+        if (t[i] == nullptr && (attrs[i].notNull || primaryIndex == i)) {
+            succ = false;
+            break;
         }
         if (!succ) break;
     }
-    if (succ) data.push_back(std::move(t));
+    // 根据要求，记录要按照主键排序
+    // （插入排序）
+    if (succ) {
+        auto iter = data.begin();
+        for (; iter != data.end() && *(*iter)[primaryIndex] < *t[primaryIndex]; iter++) ;
+        data.insert(iter, std::move(t));
+    }
     return succ;
 }
 
@@ -90,21 +96,38 @@ bool Table::del(WhereClause c) {
 bool Table::checkType(AttributeType att, ValueBase * v) {
     if (att == ATTR_CHAR && !dynamic_cast<Value<string>*> (v) )
         return false;
-    if (att == ATTR_DOUBLE && !dynamic_cast<Value<double>*> (v) )
+    if (att == ATTR_DOUBLE && !dynamic_cast<Value<double>*> (v))
         return false;
     if (att == ATTR_INT && !dynamic_cast<Value<int>*> (v) )
         return false;
     return true;
 }
+//#define DEBUG
+#ifdef DEBUG
+#include <iostream>
+#endif
 bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClause c) {
     // 类型匹配，非空检查
     for (int j = 0; j < attrNames.size(); j++) {
         for (int k = 0; k < attrs.size(); k++) {
             if (attrNames[j] == attrs[k].name) {
-                if (!checkType(attrs[k].type, vals[j]))
+                // 类型转换
+                if (attrs[k].type == ATTR_DOUBLE ) {
+                    auto nv = convert<double>(vals[j]);
+                    delete vals[j];
+                    vals[j] = nv;
+                }
+                if (!checkType(attrs[k].type, vals[j])) {
+                    errMsg = "Incompatible type.";
+                    #ifdef DEBUG
+                    vals[j]->print(std::cout);
+                    #endif
                     return false;
-                if (attrs[k].notNull && vals[j] == nullptr) 
+                }
+                if (attrs[k].notNull && vals[j] == nullptr) {
+                    errMsg = "Null where it should be not null.";
                     return false;
+                }
                 break;
             }
         }
@@ -137,7 +160,10 @@ bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClau
         }
         if (primaryValue && primaryCount > 1) break;
     }
-    if (primaryValue && primaryCount > 1) return false;
+    if (primaryValue && primaryCount > 1) {
+        errMsg = "Duplicated primary value.";
+        return false;
+    }
     for (auto i: updateList) {
         for (int j = 0; j < attrNames.size(); j++) {
             for (int k = 0; k < attrs.size(); k++) {
@@ -148,7 +174,26 @@ bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClau
                 }
             }
         }
+        if (primaryValue == nullptr) continue;
+        Record r = data[i];
+        using std::cout;
+        using std::endl;
+        // cout << "[debug]" << i << " " ;
+        // cout << *data[i+1][primaryIndex] << " " << *r[primaryIndex] << " " << (*data[i+1][primaryIndex] < *r[primaryIndex]);
+        // cout << endl;
+        int j;
+        for (j = i; j > 0 && *data[j-1][primaryIndex] > *r[primaryIndex]; j--) 
+            data[j] = std::move(data[j-1]);
+        data[j] = r;
+        r = data[i];
+        for (j = i; j + 1 < data.size() && *data[j+1][primaryIndex] < *r[primaryIndex]; j++) 
+            data[j] = std::move(data[j+1]);//, cout << "[debug]" << *data[j][primaryIndex] << endl;
+        //cout << "[debug]" << *r[primaryIndex] << endl;
+        data[j] = r;
     }
+    // std::sort(data.begin(), data.end(), [=](Record & a, Record & b)->bool {
+    //     return a[primaryIndex] < b[primaryIndex];
+    // });
     return true;
 }
 
@@ -193,7 +238,7 @@ ostream& Table::show(ostream & out) const {
         else if (i.type == ATTR_INT) 
             out << "int(11)";
         else if (i.type == ATTR_DOUBLE) 
-            out << "double(15)";
+            out << "double";
         else { /* undefined */}
         out << "\t";
         out << (i.notNull ? "NO" : "YES") << "\t" << (primary == i.name ? "PRI" : "") << "\t";

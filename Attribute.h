@@ -20,4 +20,5 @@ public:
         name(name), type(type), notNull(notNull) {}
     Attribute(string name, string type, bool notNull):
         name(name), type(fromStringToAttrType (type)), notNull(notNull) {}
+    Attribute(const Attribute & a):type(a.type), notNull(a.notNull), name(a.name) {}
 };

@@ -3,13 +3,14 @@
 #include <iomanip>
 #include <fstream>
 #include <vector>
-#include"Table.h"
 #include"sql.h"
+#include"DataBase.h"
 using namespace std;
 
 
 
 /*Manager类是管理database的数据类型*/
+
 
 class Manager{
 public:
@@ -17,7 +18,7 @@ public:
 	void CreateTable(SQLCreateTable& statement);
 	void ShowDatabases();
 	void ShowTables();
-	void ShowColumns();
+	void ShowColumns(SQLShowColumns &statement);
 	void DropDatabase(SQLDropDatabase& statement);
 	void DropTable(SQLDropTable& statement);
 	void Use(SQLUse& statement);
@@ -25,12 +26,11 @@ public:
 	void Select(SQLSelect& statement);
 	void Delete(SQLDelete& statement);
 	void Update(SQLUpdate& statement);
-	Database *GetDB();//返回当前数据库的指针
-	Database *GetDB(string db);//返回名为db的数据库的指针
+	DataBase *GetDB();//返回当前数据库的指针
+	DataBase *GetDB(string db);//返回名为db的数据库的指针
 	Manager();
 private:
 	string current_db;
-	vector<Database> databases;
+	vector<DataBase> databases;
 	int num;
-
 };
