@@ -1,14 +1,14 @@
-#include "UnitTest.h"
+//#include "UnitTest.h"
 #include<iostream>
 #include"Interpreter.h"
 using namespace std;
-
+/*
 // for unit test
 int unit_test_main () {
     whereClauseUnitTest();
     tableUnitTest();
     return 0;
-}
+}*/
 
 int main()
 {

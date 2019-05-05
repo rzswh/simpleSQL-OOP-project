@@ -8,10 +8,7 @@
 #include<iostream>
 using namespace std;
 
-string to_lower(string str){
-	transform(str.begin(),str.end(),str.begin(),::tolower);
-	return str;
-}
+string to_lower(string str);
 
 class SQL{
 public:
@@ -45,7 +42,7 @@ public:
 	string get_primary(){return primary;}
 	void set_tb_name(string name){table_name=name;}
 	vector<Attribute> GetAttributes(){return attrs;}
-	void SetAttributes(vector<Attribute> attr){attrs=attr;}
+	void SetAttributes(vector<Attribute> attr){attrs=vector<Attribute>(attr);}
 	void Parse(vector<string> sql);
 private:
 	string primary;

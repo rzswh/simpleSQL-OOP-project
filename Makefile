@@ -2,11 +2,11 @@
 
 all: main
 
-OBJ = WhereClause.o Table.o Value.o Attribute.o PrintableTable.o UnitTest.o
-HEADER = WhereClause.h Table.h Value.h Attribute.h Record.h
+OBJ = WhereClause.o DataBase.o Table.o Value.o Attribute.o PrintableTable.o sql.o Interpreter.o UnitTest.o manager.o
+HEADER = WhereClause.h DataBase.h Table.h Value.h Attribute.h sql.h Interpreter.h Record.h manager.h
 
 main: main.cpp $(HEADER) $(OBJ)
-	g++ -o main main.cpp $(OBJ)
+	g++ -o main main.cpp $(OBJ) -std=c++11
 
 Value.o: Value.cpp Value.h
 	g++ -c $*.cpp -o $*.o
@@ -14,13 +14,13 @@ Value.o: Value.cpp Value.h
 Attribute.o: Attribute.cpp Attribute.h
 	g++ -c $*.cpp -o $*.o
 
-Database.o: Database.cpp Database.h Table.h sql.h
+DataBase.o: DataBase.cpp DataBase.h Table.h sql.h
 	g++ -c $*.cpp -o $*.o
 
 Interpreter.o: Interpreter.cpp Interpreter.h manager.h sql.h
 	g++ -c $*.cpp -o $*.o
 
-manager.o: manager.cpp manager.h sql.h Database.h
+manager.o: manager.cpp manager.h sql.h DataBase.h
 	g++ -c $*.cpp -o $*.o
 
 PrintableTable.o: PrintableTable.cpp Table.h Attribute.h WhereClause.h Value.h Record.h

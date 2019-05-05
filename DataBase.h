@@ -13,9 +13,13 @@ public:
 	void DropTable(string name);
 	Table* getTB(string name);
 	DataBase(const DataBase &) = delete;
-	DataBase(DataBase &&) = default;
+	DataBase(DataBase && d) {
+		tables = d.tables;
+		d.tables.clear();
+	}
 	vector<Table*> GetTables();
-private:
-	vector<Table> tables;
+	~DataBase();
 	const string name;
+private:
+	vector<Table*> tables;
 };

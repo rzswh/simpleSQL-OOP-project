@@ -6,21 +6,22 @@ Manager::Manager():num(0){}
 
 void Manager::CreateDatabase(SQLCreateDatabase& statement){
 	cout << "Creating DataBase: " << statement.get_db_name() << endl;
-	DataBase *temp=new DataBase(statement.get_db_name());//此处应修改为相应构造函数
-	databases.push_back(*temp);
+	//DataBase *temp=new DataBase(statement.get_db_name());//此处应修改为相应构造函数
+	//databases.push_back(*temp);
+	databases.push_back(DataBase(statement.get_db_name()));
 	num++;
 }
 
 DataBase* Manager::GetDB(){
 	for(int i=0;i<num;i++)
-		if(databases[i].get_db_name()==current_db)
+		if(databases[i].name==current_db)
 			return &(databases[i]);
 	return NULL;
 }
 
 DataBase* Manager::GetDB(string db){
 	for(int i=0;i<num;i++)
-		if(databases[i].get_db_name()==db)
+		if(databases[i].name==db)
 			return &(databases[i]);
 	return NULL;
 }
@@ -42,7 +43,7 @@ void Manager::ShowDatabases()
 	}
 	cout<< "The number of databases is"<<num<<endl;
 	for (int i=0; i<num; i++)
-		cout<<i<<":"<<databases[i].get_db_name() << endl;
+		cout<<i<<":"<<databases[i].name << endl;
 }
 
 void Manager::ShowTables()

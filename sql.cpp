@@ -1,6 +1,11 @@
 #include"sql.h"	
 #include<stack>
 
+string to_lower(string str){
+	transform(str.begin(),str.end(),str.begin(),::tolower);
+	return str;
+}
+
 /* -------------- SQLCreateDatabase ----------------- */
 SQLCreateDatabase::SQLCreateDatabase(vector<string> sql) { Parse(sql); }
 
@@ -70,7 +75,7 @@ SQLShowColumns::SQLShowColumns(vector<string> sql_vector) { Parse(sql_vector); }
 
 string SQLShowColumns::get_tb_name() { return tb_name; }
 
-void SQLDropTable::Parse(vector<string> sql_vector)
+void SQLShowColumns::Parse(vector<string> sql_vector)
 {
 	sql_type = 13;
 	tb_name = sql_vector[3];
@@ -193,10 +198,10 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 	while (true)
 	{
 		if(sql_vector[pos]=="and"||"or"){
-			if(ss.size){
+			if(ss.size()){
 				LogicOperation tt=ss.top();
 				ss.pop();
-				o.push_back(make_pair<LogicOperation, int>(tt,rank++));}
+				o.push_back(make_pair(tt,rank++));}
 			if(sql_vector[pos]=="and")
 			ss.push(LOGIC_AND);
 			else ss.push(LOGIC_OR);
@@ -226,7 +231,7 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 		else {int ttt=atoi(tmp.c_str());
 		vb=new Value<int>(ttt);}
 		
-	    s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>(key, ar,vb,rank++)); // C
+	    s.push_back( make_tuple(key, ar,vb,rank++)); // C
 		
 	}
 		pos++;
@@ -256,10 +261,10 @@ void SQLDelete::Parse(vector<string> sql_vector)
 	while (true)
 	{
 		if(sql_vector[pos]=="and"||"or"){
-			if(ss.size){
+			if(ss.size()){
 				LogicOperation tt=ss.top();
 				ss.pop();
-				o.push_back(make_pair<LogicOperation, int>(tt,rank++));}
+				o.push_back(make_pair(tt,rank++));}
 			if(sql_vector[pos]=="and")
 			ss.push(LOGIC_AND);
 			else ss.push(LOGIC_OR);
@@ -289,7 +294,7 @@ void SQLDelete::Parse(vector<string> sql_vector)
 		else {int ttt=atoi(tmp.c_str());
 		vb=new Value<int>(ttt);}
 		
-	    s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>(key, ar,vb,rank++)); // C
+	    s.push_back( make_tuple(key, ar,vb,rank++)); // C
 		
 	}
 		pos++;
@@ -343,10 +348,11 @@ void SQLUpdate::Parse(vector<string> sql_vector)
 	while (true)
 	{
 		if(sql_vector[pos]=="and"||"or"){
-			if(ss.size){
+			if(ss.size()){
 				LogicOperation tt=ss.top();
 				ss.pop();
-				o.push_back(make_pair<LogicOperation, int>(tt,rank++));}
+				//o.push_back(make_pair<LogicOperation, int>(tt,rank++));
+				o.push_back(make_pair(tt,rank++));}
 			if(sql_vector[pos]=="and")
 			ss.push(LOGIC_AND);
 			else ss.push(LOGIC_OR);
@@ -377,7 +383,8 @@ void SQLUpdate::Parse(vector<string> sql_vector)
 		else {int ttt=atoi(tmp.c_str());
 		vb=new Value<int>(ttt);}
 		
-	    s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>(key, ar,vb,rank++)); // C
+	    // s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>(key, ar,vb,rank++)); // C
+	    s.push_back( make_tuple(key, ar,vb,rank++)); // C
 		
 	}
 		pos++;
