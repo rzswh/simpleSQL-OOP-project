@@ -51,16 +51,23 @@ int buildWhereClauseFrom(vector<string> sql_vector,
 			pos++;
 		}
 		else{
-			string key = sql_vector[pos];
+			string v1 = sql_vector[pos];
             pos++;
 			ArithmicOperation ar;
 			if (sql_vector[pos] == "<") ar = ARITH_LESS;
 			else if (sql_vector[pos] == "=") ar = ARITH_EQUAL;
 			else if (sql_vector[pos] == ">") ar = ARITH_GREATER;
 			pos ++;
-			ValueBase * vb = stringToValue(sql_vector[pos]);
-			s.push_back( make_tuple(key, ar,vb,rank++)); // C
+			string v2 = sql_vector[pos];
 			pos++;
+			// special case: form like 1 < id
+			if (v1[0] >= '0' && v1[0] <= '9' || v1[0] == '.' || v1[0] == '\'' || v1[0] == '\"') {
+				swap(v1, v2);
+				if (ar == ARITH_LESS) ar = ARITH_GREATER;
+				else if (ar == ARITH_GREATER) ar = ARITH_LESS;
+			}
+			ValueBase * vb = stringToValue(v2);
+			s.push_back( make_tuple(v1, ar,vb,rank++)); // C
 	    }
 		if (sql_vector[pos] == ";") break; /* one where condition, break. */
 	}
@@ -246,7 +253,7 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 		}
 		else{
 			attrFilter.push_back(sql_vector[pos++]);
-			if(sql_vector[pos]=="from") break;
+			if(to_lower(sql_vector[pos])=="from") break;
 			pos++;
 		}
 	}

@@ -187,13 +187,9 @@ bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClau
         data[j] = r;
         r = data[i];
         for (j = i; j + 1 < data.size() && *data[j+1][primaryIndex] < *r[primaryIndex]; j++) 
-            data[j] = std::move(data[j+1]);//, cout << "[debug]" << *data[j][primaryIndex] << endl;
-        //cout << "[debug]" << *r[primaryIndex] << endl;
+            data[j] = std::move(data[j+1]);
         data[j] = r;
     }
-    // std::sort(data.begin(), data.end(), [=](Record & a, Record & b)->bool {
-    //     return a[primaryIndex] < b[primaryIndex];
-    // });
     return true;
 }
 
@@ -247,6 +243,7 @@ ostream& Table::show(ostream & out) const {
 }
 
 // 以下代码仅供单元测试使用
+/*
 #include <iostream>
 using std::cout;
 using std::endl;
@@ -261,4 +258,4 @@ void Table::test_print() {
         }
         cout << endl;
     }
-}
+}*/

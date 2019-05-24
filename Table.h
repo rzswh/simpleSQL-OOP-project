@@ -82,7 +82,7 @@ public:
     virtual ~Table();
     ostream & show(ostream & out) const;
     // 以下供测试
-    friend class TestTable;
-    void test_print();
+    // friend class TestTable;
+    // void test_print();
     string getErrorMsg() { return errMsg; }
 };
