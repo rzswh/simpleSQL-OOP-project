@@ -1,0 +1,33 @@
+dfj
+a
+a
+a
+b
+b
+lkj     mnb     bvc     dfj
+1       2       3       c
+2       3       4       a
+3       4       5       c
+4       5       6       c
+5       6       7       c
+lkj     dfj
+1       c
+2       a
+3       c
+4       c
+lkj     mnb     bvc     dfj
+1       2       3       a
+2       3       4       a
+3       4       5       a
+NULL    7       7       a
+lkj     mnb     bvc     dfj
+11.0000 NULL    3       a
+14.0000 5       6       a
+lkj     mnb     bvc     dfj
+11.0000 NULL    3       a
+14.0000 5       6       a
+lkj     mnb     bvc     dfj
+11.0000 NULL    3       a
+12.0000 3       4       a
+13.0000 4       5       a
+14.0000 5       6       a

@@ -1,0 +1,31 @@
+Database
+aCs
+eDc
+iJn
+qAz
+wer	ert	rty	tyu
+1	10	3	2
+1	10	3	3
+1	10	3	4
+1	10	3	7
+1	10	3	8
+1	10	3	9
+5	10	3	10
+5	2	3	20
+5	2	3	25
+5	2	3	30
+tyu
+2
+3
+4
+7
+8
+9
+20
+25
+30
+Field	Type	Null	Key	Default	Extra
+wer	int(11)	YES		NULL	
+ert	int(11)	YES		NULL	
+rty	int(11)	YES		NULL	
+tyu	int(11)	NO	PRI	NULL	

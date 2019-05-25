@@ -1,0 +1,12 @@
+Field	Type	Null	Key	Default	Extra
+wsx	double	NO	PRI	NULL	
+edc	int(11)	NO		NULL	
+rfv	char(1)	YES		NULL	
+Tables_in_OOP
+maz
+oaz
+qaz
+Tables_in_OOP
+aaz
+maz
+qaz

@@ -18,6 +18,8 @@ int buildWhereClauseFrom(vector<string> sql_vector,
 		vector<WhereClause::SubSentence> &s,
 		int pos);
 
+ValueBase * stringToValue(string);
+
 class SQL{
 public:
 	SQL():sql_type(-1){}
@@ -104,6 +106,20 @@ private:
 	string db_name;
 };
 
+/* class: SQLLoad: load data infile FILE_NAME into dbname; 
+class SQLLoad: public SQL
+{
+public:
+	SQLLoad(vector<string> sql);
+	string get_db_name();
+	void set_db_name(string dbname);
+	string get_file_name();
+	void set_file_name(string filename);
+	void Parse(vector<string> sql);
+private:
+	string db_name;
+	string file_name;
+};*/
 
 class SQLInsert: public SQL
 {
@@ -123,6 +139,8 @@ class SQLSelect: public SQL
 public:
 	SQLSelect(vector<string> sql);
 	string get_tb_name();
+	bool if_load_file();
+	string get_load_file_name();
 	void Parse(vector<string> sql);
 	vector<string> attrFilter;
 	vector<WhereClause::SubSentence> s; 
@@ -130,6 +148,8 @@ public:
 	~SQLSelect();
 private:
 	string tb_name;
+	bool load_file;
+	string load_file_name;
 };
 
 class SQLDelete: public SQL

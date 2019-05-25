@@ -3,23 +3,14 @@
 #include <vector>
 #include <ostream>
 #include "Attribute.h"
-#include "WhereClause.h"
 #include "Value.h"
 #include "Record.h"
+#include "WhereClause.h"
+#include "PrintableTable.h"
 
 using std::string;
 using std::vector;
 using std::ostream;
-
-class PrintableTable {
-    const vector<Attribute> attrs;
-    vector<ValueBase **> data;
-public:
-    PrintableTable(vector<Attribute> a):attrs(a) {}
-    void insert(ValueBase ** vs) { data.push_back(vs); }
-    ostream & print(ostream & out) const;
-    ~PrintableTable();
-};
 
 /**
  * @encodings=utf-8

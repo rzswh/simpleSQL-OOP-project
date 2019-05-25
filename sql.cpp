@@ -83,6 +83,30 @@ int buildWhereClauseFrom(vector<string> sql_vector,
 	return pos;
 }
 
+
+ValueBase * stringToValue(string tmp) {
+	ValueBase * vb;
+	if(tmp[0]=='\''){
+		vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\'')-1));
+	} 
+	else if(tmp[0]=='\"'){
+		vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\"')-1));
+	} 
+	else if(tmp.find('.')!=string::npos){
+		vb = new Value<double>(stolld(tmp));
+		//vb = new Value<double>(0);
+	}
+	else if (to_upper(tmp) == "NULL") {
+		return new Null<ValueBase>();
+	}
+	else {
+		int ttt=atoi(tmp.c_str());
+		vb = new Value<int>(ttt);
+	}
+	return vb;
+}
+
+
 /* -------------- SQLCreateDatabase ----------------- */
 SQLCreateDatabase::SQLCreateDatabase(vector<string> sql) { Parse(sql); }
 
@@ -240,10 +264,13 @@ SQLInsert::~SQLInsert () {
 SQLSelect::SQLSelect(vector<string> sql_vector) { Parse(sql_vector); }
 
 string SQLSelect::get_tb_name() { return tb_name; }
+bool SQLSelect::if_load_file() { return load_file; }
+string SQLSelect::get_load_file_name() { return load_file_name; }
 
 void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 {
 	sql_type = 7;
+	load_file = false;
 	unsigned int pos = 1;
 	while(true){
 		if(sql_vector[pos]=="*") {
@@ -253,15 +280,28 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 		}
 		else{
 			attrFilter.push_back(sql_vector[pos++]);
-			if(to_lower(sql_vector[pos])=="from") break;
+			if(to_lower(sql_vector[pos])!=",") break;
 			pos++;
 		}
 	}
-	pos++; // from -> [table_name]
-	tb_name = sql_vector[pos];
-	pos++; // [table_name] -> ; / where
-	if (sql_vector.size() == pos + 1) return; /* sql statement like: "select * from tb;". */
-	pos = buildWhereClauseFrom(sql_vector, o, s, pos);
+	// ; / from / where / group / order / into / 
+	while (pos + 1 < sql_vector.size() && sql_vector[pos] != ";") { /* sql statement like: "select * from tb;". */
+		string cmd = to_lower(sql_vector[pos]);
+		if (cmd == "where") 
+			pos = buildWhereClauseFrom(sql_vector, o, s, pos);
+		else if (cmd == "from") { // 题目要求一定要有from
+			pos++; // from -> [table_name]
+			tb_name = sql_vector[pos];
+			pos++; 
+		}
+		else if (cmd == "into") {
+			load_file = true;
+			pos ++; // into -> outfile
+			pos ++; // outfile -> 'file_name'
+			load_file_name = sql_vector[pos].substr(1, sql_vector[pos].length() - 2); // get rid of quotes
+			pos ++; // into -> [next]
+		}
+	}
 }
 
 SQLSelect::~SQLSelect() {

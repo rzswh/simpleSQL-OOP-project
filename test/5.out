@@ -1,0 +1,7 @@
+Field	Type	Null	Key	Default	Extra
+stu_id	int(11)	NO	PRI	NULL	
+stu_name	char(1)	YES		NULL	
+stu_id	stu_name
+2018011343	a
+stu_id	stu_name
+2018011343	b

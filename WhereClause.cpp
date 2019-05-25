@@ -3,17 +3,17 @@
 #include <stack>
 
 bool WhereClause::test(const Record & r, const vector<Attribute> & va) const {
-    vector<bool> res;
+    vector<BoolValue> res;
     // 用lambda函数简化代码
-    auto check = [](SubSentence s, const ValueBase * v, bool & flag, AttributeType tp) -> bool {
+    auto check = [](SubSentence s, const ValueBase * v, bool & flag, AttributeType tp) -> BoolValue {
         ValueBase * sv = nullptr;
         ValueBase * nv = const_cast<ValueBase *>(v);
         if (tp == ATTR_CHAR) {
-            sv = convert<string>(std::get<2>(s));
-            v = convert<string>(const_cast<ValueBase*>(v));
+            sv = convertT<CharValue>(std::get<2>(s));
+            v = convertT<CharValue>(const_cast<ValueBase*>(v));
         } else if (tp == ATTR_DOUBLE || tp == ATTR_INT) {
-            sv = convert<double>(std::get<2>(s));
-            v = convert<double>(const_cast<ValueBase*>(v));
+            sv = convertT<DoubleValue>(std::get<2>(s));
+            v = convertT<DoubleValue>(const_cast<ValueBase*>(v));
         }
         if (std::get<1>(s) == ARITH_GREATER) {
             return v && *v > *sv;
@@ -31,7 +31,7 @@ bool WhereClause::test(const Record & r, const vector<Attribute> & va) const {
     // 将每个子句转化为对应的判断结果
     for (auto &i: subsentences) {
         bool flag = true;
-        bool result;
+        BoolValue result;
         for (int j = 0; j < va.size(); j++) {
             if (va[j].name == std::get<0>(i)) {
                 result = check(i, r[j], flag, va[j].type);
@@ -44,7 +44,7 @@ bool WhereClause::test(const Record & r, const vector<Attribute> & va) const {
     if (res.size() == 0) 
         return true;
     // 用逆波兰表达式对逻辑表达式求值，计算判断结果
-    vector<bool> stack;
+    vector<BoolValue> stack;
     stack.push_back(res[0]);
     int i = 1, j = 0, n = subsentences.size(), m = operation.size();
     for (; j < m; ) {
@@ -64,5 +64,5 @@ bool WhereClause::test(const Record & r, const vector<Attribute> & va) const {
             j ++;
         }
     }
-    return stack[0];
+    return bool(stack[0]) && !isNull(stack[0]);
 }

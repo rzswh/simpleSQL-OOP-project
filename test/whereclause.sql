@@ -1,0 +1,10 @@
+CREATE DATABASE OOP;
+USE OOP;
+CREATE TABLE oop_info(stu_id INT NOT NULL, stu_name CHAR, PRIMARY KEY(stu_id));
+SHOW columns from oop_info;
+INSERT INTO oop_info(stu_id, stu_name) VALUES (2018011243, "a");
+INSERT INTO oop_info(stu_id, stu_name) VALUES (2018011344, "b");
+INSERT INTO oop_info(stu_id, stu_name) VALUES (2018011445, "c");
+SELECT * from oop_info;
+SELECT * from oop_info WHERE stu_id>2018011300 AND stu_id<2018011400;
+DROP DATABASE OOP;

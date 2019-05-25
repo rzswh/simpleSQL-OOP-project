@@ -4,6 +4,56 @@ using std::string;
 
 ValueBase::~ValueBase() {}
 
+BoolValue ValueBase::operator==(const ValueBase & v) const {
+	return Null<BoolValue>();
+}
+BoolValue ValueBase::operator<(const ValueBase & v) const {
+	return Null<BoolValue>();
+}
+BoolValue ValueBase::operator>(const ValueBase & v) const {
+	return Null<BoolValue>();
+}
+ostream & ValueBase::print(ostream & out) const {
+	auto ptr = &out;
+	if (dynamic_cast<std::ofstream *>(ptr)) 
+		return out << "\\N"; // 文件，只能用“\N”来表示空值
+	return out << "NULL"; // 屏幕
+}
+
+BoolValue BoolValue::operator&&(const BoolValue & v) const {
+	return (v.isNull || isNull) ? Null<BoolValue>() : BoolValue(this->v && v) ;
+}
+
+BoolValue BoolValue::operator||(const BoolValue & v) const {
+	return (v.isNull || isNull) ? Null<BoolValue>() : BoolValue(this->v || v) ;
+}
+
+BoolValue BoolValue::operator^(const BoolValue & v) const {
+	return (v.isNull || isNull) ? Null<BoolValue>() : BoolValue(this->v ^ v) ;
+}
+
+BoolValue BoolValue::operator!() const {
+	return isNull ? Null<BoolValue>() : BoolValue(!this->v) ;
+}
+
+BoolValue BoolValue::makeNull() {
+	BoolValue null(false); null.isNull = true; 
+	return null;
+}
+
+/*
+BoolValue BoolValue::operator==(const ValueBase & v) const {
+	BoolValue * nptr = dynamic_cast<BoolValue *>(const_cast<ValueBase *>(&v));
+	if (nptr) return BoolValue(this->operator bool() == bool(*nptr));
+	return BoolValue(false);
+}*/
+
+// 这应当是一个永远用不上的函数，毕竟数据表中没有这种类型
+ostream & BoolValue::print(ostream & out) const {
+	if (isNull) return ValueBase::print(out);
+	return out << (v ? "TRUE": "FALSE");  // ????
+} 
+
 long double stolld(string str) {
 	long double ret = 0;
 	int exp = 0;
@@ -16,28 +66,16 @@ long double stolld(string str) {
 	return ret;
 }
 
-ValueBase * stringToValue(string tmp) {
-	ValueBase * vb;
-	if(tmp[0]=='\''){
-		vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\'')-1));
-	} 
-	else if(tmp[0]=='\"'){
-		vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\"')-1));
-	} 
-	else if(tmp.find('.')!=string::npos){
-		vb = new Value<double>(stolld(tmp));
-		//vb = new Value<double>(0);
-	}
-	else {
-		int ttt=atoi(tmp.c_str());
-		vb = new Value<int>(ttt);
-	}
-	return vb;
+bool isNull(ValueBase * v) { 
+	return !v || v->isNull;
+}
+bool isNull(const ValueBase & v) { 
+	return isNull(const_cast<ValueBase *> (&v));
 }
 
 template<class T> Value<T>* convert(ValueBase * b) {
     auto i = dynamic_cast<Value<T>*> (b);
-    if (b == nullptr) return nullptr;
+    if (i == nullptr) return nullptr;
     return i->copy();
 }
 template<> Value<double>* convert(ValueBase * b) {
@@ -55,3 +93,33 @@ template<> Value<int>* convert(ValueBase * b) {
     return nullptr;
 }
 template Value<string>* convert<string>(ValueBase *b);
+
+template<class T> T* convertT(ValueBase * b) {
+	if (isNull(b)) {
+		return new Null<T>();
+	}
+    auto i = dynamic_cast<T*> (b);
+    if (i == nullptr) return nullptr;
+    return i->copy();
+}
+template<> DoubleValue* convertT(ValueBase * b) {
+	if (isNull(b)) {
+		return new Null<DoubleValue>;
+	}
+    auto i = dynamic_cast<DoubleValue*> (b);
+    if (i) return i->copy();
+    auto j = dynamic_cast<IntValue*> (b);
+    if (j) return new DoubleValue(j->operator int());
+    return nullptr;
+}
+template<> IntValue* convertT(ValueBase * b) {
+	if (isNull(b)) {
+		return new Null<IntValue>;
+	}
+    auto i = dynamic_cast<IntValue*> (b);
+    if (i) return i->copy();
+    auto j = dynamic_cast<DoubleValue*> (b);
+    if (j) return new IntValue(j->operator double());
+    return nullptr;
+}
+template CharValue* convertT<CharValue>(ValueBase *b);

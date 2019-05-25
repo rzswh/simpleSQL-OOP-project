@@ -28,19 +28,19 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
                 {
                     case ATTR_INT:
                     {
-                        t[j] = convert<int>(vals[i]);
+                        t[j] = convertT<IntValue>(vals[i]);
                         if (vals[i] && !t[j]) succ = false;
                         break;
                     }
                     case ATTR_DOUBLE:
                     {
-                        t[j] = convert<double>(vals[i]);
+                        t[j] = convertT<DoubleValue>(vals[i]);
                         if (vals[i] && !t[j]) succ = false;
                         break;
                     }
                     case ATTR_CHAR:
                     {
-                        t[j] = convert<string>(vals[i]);
+                        t[j] = convertT<CharValue>(vals[i]);
                         if (vals[i] && !t[j]) succ = false;
                         break;
                     }
@@ -51,6 +51,10 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
             }
         }
         if (!succ) break;
+    }
+    // 把Record中空指针的地方赋值为Null
+    for (int j = 0; j < attrs.size(); j++) {
+        if (!t[j]) t[j] = new Null<ValueBase>();
     }
     int primaryIndex = 0;
     for (int i = 0; i < attrs.size(); i++) {
@@ -68,7 +72,7 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
     }
     for (int i = 0; i < attrs.size(); i++) {
         // notNull 检查(主键强制非空)
-        if (t[i] == nullptr && (attrs[i].notNull || primaryIndex == i)) {
+        if (isNull(t[i]) && (attrs[i].notNull || primaryIndex == i)) {
             succ = false;
             break;
         }
@@ -113,9 +117,9 @@ bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClau
             if (attrNames[j] == attrs[k].name) {
                 // 类型转换
                 if (attrs[k].type == ATTR_DOUBLE ) {
-                    auto nv = convert<double>(vals[j]);
+                    auto nv = convertT<DoubleValue>(vals[j]);
                     delete vals[j];
-                    vals[j] = nv;
+                    vals[j] = nv ? nv : new Null<DoubleValue>();//DoubleValue::makeNull();
                 }
                 if (!checkType(attrs[k].type, vals[j])) {
                     errMsg = "Incompatible type.";
@@ -124,7 +128,7 @@ bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClau
                     #endif
                     return false;
                 }
-                if (attrs[k].notNull && vals[j] == nullptr) {
+                if (attrs[k].notNull && isNull(vals[j])) {
                     errMsg = "Null where it should be not null.";
                     return false;
                 }
@@ -182,7 +186,7 @@ bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClau
         // cout << *data[i+1][primaryIndex] << " " << *r[primaryIndex] << " " << (*data[i+1][primaryIndex] < *r[primaryIndex]);
         // cout << endl;
         int j;
-        for (j = i; j > 0 && *data[j-1][primaryIndex] > *r[primaryIndex]; j--) 
+        for (j = i; j > 0 && *r[primaryIndex] < *data[j-1][primaryIndex]; j--) 
             data[j] = std::move(data[j-1]);
         data[j] = r;
         r = data[i];
@@ -213,7 +217,7 @@ PrintableTable * Table::select(vector<string> attrFilter, WhereClause c) {
         if (!c.test(r, attrs)) continue;
         auto nr = new ValueBase *[m];
         for (int i = 0, j = 0; i < n; i++) {
-            if (j == m || attrs[i].name == newTableAttrs[j].name) {
+            if (j < m && attrs[i].name == newTableAttrs[j].name) {
                 nr[j] = r[i] ? r[i]->copy() : r[i];
                 j++;
             }

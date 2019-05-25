@@ -164,7 +164,15 @@ void Manager::Select(SQLSelect& statement)
 	Table *tb = GetDB()->getTB(statement.get_tb_name());
 	if (tb == NULL) return;
 	WhereClause c(statement.s,statement.o);
-	tb->select(statement.attrFilter,c)->print(cout);
+	PrintableTable * res = tb->select(statement.attrFilter,c);
+	if (!statement.if_load_file()) {
+		res->print(cout);
+	} else {
+		ofstream fout(statement.get_load_file_name());
+		res->print(fout);
+		fout.close();
+	}
+	delete res;
 }
 
 void Manager::Delete(SQLDelete& statement)
