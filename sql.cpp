@@ -19,6 +19,7 @@ int buildWhereClauseFrom(vector<string> sql_vector,
 	std::stack<LogicOperation> ss;
 	int rank=0;
 	pos++;
+	bool exp = true; // 下一个是表达式。用于判断子句何时结束
 	while (true)
 	{
 		auto logicPriority = [](LogicOperation o)->int {
@@ -49,8 +50,9 @@ int buildWhereClauseFrom(vector<string> sql_vector,
             }
 			ss.push(lo);
 			pos++;
-		}
-		else{
+			exp = true;
+		} else {
+			if (!exp) break;
 			string v1 = sql_vector[pos];
             pos++;
 			ArithmicOperation ar;
@@ -68,7 +70,8 @@ int buildWhereClauseFrom(vector<string> sql_vector,
 			}
 			ValueBase * vb = stringToValue(v2);
 			s.push_back( make_tuple(v1, ar,vb,rank++)); // C
-	    }
+			exp = false;
+		}
 		if (sql_vector[pos] == ";") break; /* one where condition, break. */
 	}
 	while (!ss.empty() ) {
@@ -300,6 +303,9 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 			pos ++; // outfile -> 'file_name'
 			load_file_name = sql_vector[pos].substr(1, sql_vector[pos].length() - 2); // get rid of quotes
 			pos ++; // into -> [next]
+		} else {
+			cerr << "Unexpected subsequence: " << sql_vector[pos] << endl;
+			pos++;
 		}
 	}
 }

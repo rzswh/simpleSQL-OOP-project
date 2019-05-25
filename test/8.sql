@@ -34,5 +34,5 @@ SELECT * from poi2;
 DELETE FROM poi2 WHERE 4.9>mnb;
 SELECT * from poi2 where "a"=dfj;
 SELECT * from poi2 where NULL>dfj;
-SELECT * from poi2 where 'b'>dfj;
+SELECT * from poi2 where 'b'>dfj into outfile 'withnull' ;
 DROP DATABASE OOP2;
