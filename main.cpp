@@ -1,9 +1,12 @@
 #include<iostream>
 #include"Interpreter.h"
+#include "UnitTest.h"
 using namespace std;
 
 int main()
 {
+	unitTests();
+	return 0;
 	Interpreter interpreter;
 	char *sqlsentence = new char[1024];
 	while (true)
@@ -12,7 +15,6 @@ int main()
         if (!cin) break;
 		interpreter.SQL(sqlsentence);
 	}
-	//cout << (Value<int>(4) == Value<double>(4.0)) << endl;
 	delete [] sqlsentence;
 	return 0;
 }

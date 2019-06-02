@@ -2,9 +2,15 @@
 
 using std::endl;
 
+PrintableTable::PrintableTable(vector<Attribute> a) {
+    for (auto &i: a) attrs.push_back(i.name);
+}
+PrintableTable::PrintableTable(vector<Expression *>  exps) {
+    for (auto &i: exps) attrs.push_back(i->toString());
+}
 ostream & PrintableTable::printHead(ostream & out) const {
     int n = attrs.size();
-    for (int i = 0; i < n; i++) out << attrs[i].name << "\t";
+    for (int i = 0; i < n; i++) out << attrs[i] << "\t";
     out << endl;
 }
 ostream & PrintableTable::printData(ostream & out) const {
@@ -18,6 +24,16 @@ ostream & PrintableTable::printData(ostream & out) const {
         out << endl;
     }
     return out;
+}
+
+void PrintableTable::setData(const vector<Record> & data) {
+    int n = attrs.size(), m = attrs.size();
+    for (auto r: data) {
+        auto nr = new ValueBase *[m];
+        for (int i = 0; i < n; i++) 
+            nr[i] = r[i] ? r[i]->copy() : r[i]; 
+        insert(nr);
+    }
 }
 
 ostream & PrintableTable::print(ostream & out) const {
