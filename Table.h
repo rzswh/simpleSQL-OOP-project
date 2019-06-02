@@ -23,7 +23,7 @@ private:
     bool checkType(AttributeType att, ValueBase * v);
     string errMsg;
     // 根据一条记录的数据，对表达式进行求值
-    Record && eval(const Record & r, vector<Expression*> exps);
+    Record eval(const Record & r, vector<Expression*> exps);
     // 分治的思路将记录进行分组，分别进行求值之后返回
     vector<Record> groupIntoTable(vector<Record *> tot, vector<AttributeExpression> agg, const vector<Expression *>& exps);
 
@@ -72,7 +72,7 @@ public:
      * */
     bool update(vector<string> attrNames, vector<ValueBase *> vals, WhereClause c);
     /**
-     * select
+     * select 朴素版本
      * 选出满足whereClause的行，取出包含在attrFilter中的属性，组成一张新表并返回。
      * @attrFilter 需要选出的属性名称。如果欲选出所有属性，请传入一个仅包含字符串“*”的向量。
      * */
@@ -80,7 +80,7 @@ public:
     /**
      * select 表内分组排序版本
      * 选出满足whereClause的行，按照group_by分组、order_by排序，对exps中表达式进行求值，得到各列，组成一张新表并返回。
-     * 返回之前delete掉数组exps中的对象
+     * 传入的表达式对象Expression不会被删除，需要调用者手动进行内存回收。
      * @attrFilter 需要选出的属性名称。如果欲选出所有属性，请传入一个仅包含字符串“*”的向量。
      * @group_by 需要特别分组的属性。按照其中属性进行分组，所有表达式只作用于同一组上。举例：
      *  SELECT stu_name, COUNT(*) from oop_info GROUP BY stu_name; 选出同名学生名称和人数。

@@ -55,4 +55,5 @@ public:
     ~CountFunction();
     ValueBase * eval(const Record &, const vector<Attribute> & attrs);
     ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs);
+    string toString() const;
 };

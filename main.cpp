@@ -1,11 +1,15 @@
 #include<iostream>
 #include"Interpreter.h"
-#include "UnitTest.h"
+#ifdef TEST
+#include "test/UnitTest.h"
+#endif
 using namespace std;
 
 int main()
 {
+#ifdef TEST
 	unitTests();
+#endif
 	return 0;
 	Interpreter interpreter;
 	char *sqlsentence = new char[1024];

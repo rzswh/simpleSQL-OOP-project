@@ -4,13 +4,13 @@ all: main
 
 OBJ = WhereClause.o DataBase.o Table.o Value.o Attribute.o PrintableTable.o sql.o Interpreter.o manager.o Expression.o
 HEADER = WhereClause.h DataBase.h Table.h Value.h Attribute.h sql.h Interpreter.h Record.h manager.h PrintableTable.h Expression.h
-ARGS = -std=c++11
+ARGS = -std=c++11 -g
 
 main: main.cpp $(HEADER) $(OBJ)
 	g++ -o main main.cpp $(OBJ) $(ARGS)
 
-debug: main.cpp $(HEADER) $(OBJ)
-	g++ -o main main.cpp $(OBJ) $(ARGS) -g
+debug: main.cpp $(HEADER) $(OBJ) main
+	g++ -o main main.cpp $(OBJ) test/UnitTest.cpp $(ARGS) -DTEST -g
 
 Value.o: Value.cpp Value.h
 	g++ -c $*.cpp -o $*.o $(ARGS)

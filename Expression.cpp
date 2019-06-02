@@ -48,5 +48,9 @@ ValueBase * CountFunction::evalAggregate(vector<Record *>& rs, const vector<Attr
             }
         }
         return new IntValue(ret);
-    }
+    } else return ValueBase::newNull();
+}
+
+string CountFunction::toString() const {
+    return string("COUNT(") + exp->toString() + ")";
 }
