@@ -37,11 +37,12 @@ void functionTest() {
         }), 
         vector<std::pair<LogicOperation, int> >({})
     );
-    CountFunction * count = new CountFunction(new AttributeExpression("student_gpa"));
+    CountFunction * count = new CountFunction(new AttributeExpression("*"));
     AttributeExpression * id = new AttributeExpression("student_gpa");
+    AttributeExpression * nm = new AttributeExpression("student_name");
     PrintableTable * ptb = tbl.select(vector<Expression*>({count}), wc2,
-            vector<AttributeExpression>(),//{AttributeExpression("student_name")}), 
-            nullptr);//new AttributeExpression("student_name"));
+            vector<Expression*>({nm}), 
+            nm);
     ptb->print(std::cout);
     delete ptb;
     delete s1, s2;

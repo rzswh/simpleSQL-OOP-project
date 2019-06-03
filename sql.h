@@ -5,6 +5,7 @@
 #include<algorithm>
 #include"Attribute.h"
 #include"WhereClause.h"
+#include "Expression.h"
 #include<iostream>
 using namespace std;
 
@@ -13,12 +14,16 @@ string to_upper(string str);
 /**
  * 语句被切割后放在sql_vector中，本函数将sql_vector中从pos下标开始的where子句转换为其组成要素。
  */ 
-int buildWhereClauseFrom(vector<string> sql_vector, 
+unsigned int buildWhereClauseFrom(vector<string> sql_vector, 
 		vector<pair<LogicOperation, int> > &o,
 		vector<WhereClause::SubSentence> &s,
-		int pos);
+		unsigned int pos);
 
 ValueBase * stringToValue(string);
+
+Expression * parseExpression(string sentence);
+vector<Expression *> readExpressionsFromString(const vector<string> &sql_vector, unsigned int & pos);
+Expression * readExpressionFromString(const vector<string>& sql_vector, unsigned int & pos);
 
 class SQL{
 public:
@@ -145,8 +150,14 @@ public:
 	vector<string> attrFilter;
 	vector<WhereClause::SubSentence> s; 
 	vector<pair<LogicOperation, int> > o;
+	vector<Expression *> get_expressions();
+	vector<Expression *> get_group_by();
+	Expression * get_order_by();
 	~SQLSelect();
 private:
+	vector<Expression *> expressions;
+	vector<Expression *> group_by;
+	Expression * order_by;
 	string tb_name;
 	bool load_file;
 	string load_file_name;

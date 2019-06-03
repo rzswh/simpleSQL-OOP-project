@@ -21,6 +21,7 @@ UPDATE qwe SET ert=10 WHERE tyu<15;
 SELECT * from qwe;
 DELETE from qwe WHERE wer=5 and ert=10;
 SELECT tyu from qwe;
+SELECT COUNT(tyu) from qwe;
 SHOW columns from sqwe;
 DROP DATABASE aCs;
 DROP DATABASE qAz;

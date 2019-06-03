@@ -10,7 +10,7 @@ main: main.cpp $(HEADER) $(OBJ)
 	g++ -o main main.cpp $(OBJ) $(ARGS)
 
 debug: main.cpp $(HEADER) $(OBJ) main
-	g++ -o main main.cpp $(OBJ) test/UnitTest.cpp $(ARGS) -DTEST -g
+	g++ -o main main.cpp $(OBJ) test/UnitTest.cpp $(ARGS) -g
 
 Value.o: Value.cpp Value.h
 	g++ -c $*.cpp -o $*.o $(ARGS)
@@ -30,7 +30,7 @@ manager.o: manager.cpp manager.h sql.h DataBase.h
 PrintableTable.o: PrintableTable.cpp PrintableTable.h Attribute.h Value.h Record.h  Expression.h
 	g++ -c $*.cpp -o $*.o $(ARGS)
 
-sql.o: sql.cpp sql.h manager.h
+sql.o: sql.cpp sql.h manager.h Expression.h Attribute.h WhereClause.h
 	g++ -c $*.cpp -o $*.o $(ARGS)
 
 WhereClause.o: WhereClause.cpp WhereClause.h Value.h

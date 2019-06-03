@@ -1,8 +1,6 @@
 #include"sql.h"	
 #include<stack>
 
-//#define DEBUG
-
 string to_lower(string str){
 	transform(str.begin(),str.end(),str.begin(),::tolower);
 	return str;
@@ -12,10 +10,10 @@ string to_upper(string str){
 	return str;
 }
 
-int buildWhereClauseFrom(vector<string> sql_vector, 
+unsigned int buildWhereClauseFrom(vector<string> sql_vector, 
 		vector<pair<LogicOperation, int> > &o,
 		vector<WhereClause::SubSentence> &s,
-		int pos = 0) {
+		unsigned int pos = 0) {
 	std::stack<LogicOperation> ss;
 	int rank=0;
 	pos++;
@@ -87,6 +85,44 @@ int buildWhereClauseFrom(vector<string> sql_vector,
 }
 
 
+Expression * parseExpression(string sentence) {
+	#ifdef DEBUG
+	std::cerr << '\t' << sentence << endl;
+	#endif
+	auto isFunc = sentence.find_first_of('(');
+	if(sentence=="*") {
+		return new AttributeExpression("*");
+	} else if (isFunc != string::npos) { // 函数
+		string func = to_lower(sentence.substr(0, isFunc));
+		Expression * inner = parseExpression(sentence.substr(isFunc+1, sentence.find_last_of(')') - isFunc - 1));
+		if (func == "count") 
+			return new CountFunction(inner);
+	}
+	else{
+		return new AttributeExpression(sentence);
+	}
+}
+
+Expression * readExpressionFromString(const vector<string>& sql_vector, unsigned int & pos) {
+	string exp = sql_vector[pos++];
+	if (sql_vector[pos] == "(") {
+		do exp += sql_vector[pos];
+		while (sql_vector[pos++] != ")");
+	}
+	return parseExpression(exp);
+}
+
+// 读一系列用“, ”连接的表达式
+vector<Expression *> readExpressionsFromString(const vector<string> &sql_vector, unsigned int & pos) {
+	vector<Expression *> exps;
+	while (true) {
+		exps.push_back(readExpressionFromString(sql_vector, pos));
+		if(to_lower(sql_vector[pos])!=",") break;
+		pos++; // skip ','
+	}
+	return exps;
+}
+
 ValueBase * stringToValue(string tmp) {
 	ValueBase * vb;
 	if(tmp[0]=='\''){
@@ -97,7 +133,6 @@ ValueBase * stringToValue(string tmp) {
 	} 
 	else if(tmp.find('.')!=string::npos){
 		vb = new Value<double>(stolld(tmp));
-		//vb = new Value<double>(0);
 	}
 	else if (to_upper(tmp) == "NULL") {
 		return new Null<ValueBase>();
@@ -264,29 +299,24 @@ SQLInsert::~SQLInsert () {
 }
 
 /* ---------------- SQLSelect ----------------- */
-SQLSelect::SQLSelect(vector<string> sql_vector) { Parse(sql_vector); }
+SQLSelect::SQLSelect(vector<string> sql_vector) { 
+	order_by = nullptr;
+	Parse(sql_vector); 
+}
 
 string SQLSelect::get_tb_name() { return tb_name; }
 bool SQLSelect::if_load_file() { return load_file; }
 string SQLSelect::get_load_file_name() { return load_file_name; }
+vector<Expression *> SQLSelect::get_expressions() { return expressions; }
+vector<Expression *> SQLSelect::get_group_by() { return group_by; }
+Expression * SQLSelect::get_order_by() { return order_by; }
 
 void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 {
 	sql_type = 7;
 	load_file = false;
-	unsigned int pos = 1;
-	while(true){
-		if(sql_vector[pos]=="*") {
-			attrFilter.push_back("*");
-			pos++;
-			break;
-		}
-		else{
-			attrFilter.push_back(sql_vector[pos++]);
-			if(to_lower(sql_vector[pos])!=",") break;
-			pos++;
-		}
-	}
+	unsigned int pos = 1; // select -> [expressions]
+	expressions = readExpressionsFromString(sql_vector, pos);
 	// ; / from / where / group / order / into / 
 	while (pos + 1 < sql_vector.size() && sql_vector[pos] != ";") { /* sql statement like: "select * from tb;". */
 		string cmd = to_lower(sql_vector[pos]);
@@ -296,6 +326,14 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 			pos++; // from -> [table_name]
 			tb_name = sql_vector[pos];
 			pos++; 
+		}
+		else if (cmd == "group") { // group by
+			pos+=2; // group -> by -> [expressions]
+			group_by = readExpressionsFromString(sql_vector, pos); // [expressions] -> [next keyword]
+		}
+		else if (cmd == "order") { // order by
+			pos+=2; // order -> by -> [expression]
+			order_by = readExpressionFromString(sql_vector, pos); // [expressions] -> [next keyword]
 		}
 		else if (cmd == "into") {
 			load_file = true;
@@ -313,6 +351,11 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 SQLSelect::~SQLSelect() {
 	for (auto i: s) 
 		delete std::get<2>(i);
+	for (auto i: expressions)
+		delete i;
+	for (auto i: group_by)
+		delete i;
+	delete order_by;
 }
 
 

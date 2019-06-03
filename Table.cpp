@@ -228,7 +228,7 @@ PrintableTable * Table::select(vector<string> attrFilter, WhereClause c) {
     return table;
 }
 
-PrintableTable * Table::select(vector<Expression *> exps, WhereClause c, vector<AttributeExpression> group_by, AttributeExpression* order_by) {
+PrintableTable * Table::select(vector<Expression *> exps, WhereClause c, vector<Expression*> group_by, Expression* order_by) {
     // 先根据WhereClause过滤记录
     vector<Record> ret;
     for (auto& i: data) {
@@ -238,19 +238,18 @@ PrintableTable * Table::select(vector<Expression *> exps, WhereClause c, vector<
     typedef AggregationFunctionExpression AFE;
     typedef AttributeExpression AE;
     // 判断有没有累积函数（需要GROUP BY特殊处理）
-    vector<AFE*> aggregate; // 累积函数集合
+    bool aggregate = false; // 有无累积函数
     for (auto& i: exps) {
         if (dynamic_cast<AFE *>(i)) 
-            aggregate.push_back(dynamic_cast<AFE *>(i));
+            aggregate = true;
         else if (dynamic_cast<AttributeExpression *>(i))
-            group_by.push_back(*dynamic_cast<AttributeExpression *>(i));
+            group_by.push_back(i);
     }
-    if (aggregate.size() > 0) {
-        sort(group_by.begin(), group_by.end(), [](AE & a, AE & b) { return a.toString() < b.toString(); });
-        unique(group_by.begin(), group_by.end(), [](AE & a, AE & b) { return a.toString() < b.toString(); });
-        // group_by选出分组依据的字段
-        // 不用担心重复，毕竟是分组
-        if (order_by) group_by.insert(group_by.begin(), *order_by);
+    if (aggregate) {
+        // 分组依据不需要去重，不用担心重复
+        //sort(group_by.begin(), group_by.end(), [](Expression * a, Expression * b) { return a->toString() < b->toString(); });
+        //unique(group_by.begin(), group_by.end(), [](Expression * a, Expression * b) { return a->toString() < b->toString(); });
+        if (order_by) group_by.insert(group_by.begin(), order_by);
         // 根据分组依据分为若干组
         vector<Record *> tot;
         for (auto& i: ret) 
@@ -259,28 +258,32 @@ PrintableTable * Table::select(vector<Expression *> exps, WhereClause c, vector<
         auto gp = groupIntoTable(tot, group_by, exps);
         ret.swap(gp);
     } else {
-        // 对每组分别求函数
+        // 对每条分别求函数
         vector<Expression *> outputExps;
         for (auto& i: exps) {
             auto ae = dynamic_cast<AttributeExpression*>(i);
             if (ae && ae->toString() == "*") {
+                outputExps.clear();
                 for (auto j: attrs) {
                     outputExps.push_back(new AttributeExpression(j.name));
                 }
-            } else exps.push_back(ae);
+                break;
+            } else outputExps.push_back(ae);
         }
-        sort(outputExps.begin(), outputExps.end(), [](Expression * a, Expression * b) { return a->toString() < b->toString(); });
-        unique(outputExps.begin(), outputExps.end(), [](Expression * a, Expression * b) { return a->toString() < b->toString(); });
-        exps = outputExps;
+        //sort(outputExps.begin(), outputExps.end(), [](Expression * a, Expression * b) { return a->toString() < b->toString(); });
+        //unique(outputExps.begin(), outputExps.end(), [](Expression * a, Expression * b) { return a->toString() < b->toString(); });
+        exps.swap(outputExps);
         // 对所有元素一一求值
-        for (auto& i: data){
-            ret.push_back(eval(i, exps));
+        vector<Record> newrecords;
+        for (auto& i: ret){
+            newrecords.push_back(eval(i, exps));
         }
-        // 排序(希望后面是保序的)
+        ret.swap(newrecords);
+        // 排序
         if (order_by) {
-            int orderKey = 0;
-            for (int i = 0; i < exps.size(); i++) if (exps[i]->toString() == order_by->toString()) { orderKey = i; break; }
-            sort(ret.begin(), ret.end(), [orderKey](Record & a, Record & b) { return a[orderKey] < b[orderKey]; });
+            sort(ret.begin(), ret.end(), [&](Record & a, Record & b) { 
+                return *eval(a, order_by) < *eval(b, order_by);
+            });
         }
     }
     // 信息打包返回
@@ -295,21 +298,25 @@ Record Table::eval(const Record & r, vector<Expression*> exps) {
     int m = exps.size();
     Record ret(m);
     for (int i = 0; i < m; i++) {
-        if (dynamic_cast<AttributeExpression *>(exps[i])) {
-            ret[i] = r[Table::findAttributeIndex(attrs, dynamic_cast<AttributeExpression *>(exps[i])->toString())]->copy();
-        } else if (dynamic_cast<ConstExpression *>(exps[i])) {
-            ret[i] = dynamic_cast<ConstExpression *>(exps[i])->eval();
-        } else if (dynamic_cast<FunctionExpression *>(exps[i])) {
-            ret[i] = dynamic_cast<FunctionExpression *>(exps[i])->eval(r, attrs);
-        } else {
-            ret[i] = ValueBase::newNull();
-        }
+        ret[i] = eval(r, exps[i]);
     }
     return ret;
 }
 
 
-vector<Record> Table::groupIntoTable(vector<Record *> tot, vector<AttributeExpression> agg, const vector<Expression *>& exps) {
+ValueBase* Table::eval(const Record & r, Expression* exp) {
+    if (dynamic_cast<AttributeExpression *>(exp)) {
+        return r[Table::findAttributeIndex(attrs, dynamic_cast<AttributeExpression *>(exp)->toString())]->copy();
+    } else if (dynamic_cast<ConstExpression *>(exp)) {
+        return dynamic_cast<ConstExpression *>(exp)->eval();
+    } else if (dynamic_cast<FunctionExpression *>(exp)) {
+        return dynamic_cast<FunctionExpression *>(exp)->eval(r, attrs);
+    } else {
+        return ValueBase::newNull();
+    }
+}
+
+vector<Record> Table::groupIntoTable(vector<Record *> tot, vector<Expression* > agg, const vector<Expression *>& exps, vector<ValueBase *>* sortMetric) {
     if (tot.size() == 0) return vector<Record>();
     if (agg.size() == 0) {
         Record ret = eval(*(tot[0]), exps);
@@ -321,19 +328,34 @@ vector<Record> Table::groupIntoTable(vector<Record *> tot, vector<AttributeExpre
                 ret[i] = ag->evalAggregate(tot, attrs);
             }
         }
+        if (sortMetric) {
+            sortMetric->push_back(sortExpression->evalAggregate(tot, attrs));
+        }
         return vector<Record> ({ret});
     }
-    int ind = findAttributeIndex(attrs, agg[0].toString());
-    sort(tot.begin(), tot.end(), [ind](Record * a, Record * b) { return *((*a)[ind]) < *((*b)[ind]); });
+    Expression * exp = agg[0];
     agg.erase(agg.begin());
     vector<Record> ret;
-    for (auto i = tot.begin(); i != tot.end(); i++) {
-        auto last = i;
-        vector<Record*> newtot;
-        while ((i+1) != tot.end() && *((*(*(i+1)))[ind]) == *((*(*i))[ind])) i++;
-        for (auto j = last; j != i+1; j++) newtot.push_back(*j);
-        vector<Record> results = groupIntoTable(newtot, agg, exps);
-        for (auto i: results) ret.push_back(i);
+    // 从逻辑上讲，这一类函数不能参与真正的分组，而应该参与排序。应该只有最外面一层才能是累积函数。
+    if (!dynamic_cast<AggregationFunctionExpression*>(exp)) {
+        sort(tot.begin(), tot.end(), [&](Record * a, Record * b) { return *eval(*a, exp) < *eval(*b, exp); });
+        for (auto i = tot.begin(); i != tot.end(); i++) {
+            auto last = i;
+            vector<Record*> newtot;
+            while ((i+1) != tot.end() && *eval(**(i+1), exp) == *eval(**i, exp)) i++;
+            for (auto j = last; j != i+1; j++) newtot.push_back(*j);
+            vector<Record> results = groupIntoTable(newtot, agg, exps, sortMetric);
+            for (auto i: results) ret.push_back(i);
+        }
+    } else {
+        sortExpression = dynamic_cast<AggregationFunctionExpression*>(exp);
+        vector<ValueBase *> order;
+        vector<Record> results = groupIntoTable(tot, agg, exps, &order);
+        // 以order为关键字，对results进行排序
+        vector<int> rank; 
+        for (int i = 0; i < order.size(); i++) rank.push_back(i);
+        sort(rank.begin(), rank.end(), [&](int i, int j)->bool { return *order[i] < *order[j]; });
+        for (int i: rank) ret.push_back(results[i]);
     }
     return ret;
 }

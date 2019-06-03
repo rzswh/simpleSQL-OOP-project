@@ -9,8 +9,8 @@ int main()
 {
 #ifdef TEST
 	unitTests();
-#endif
 	return 0;
+#endif
 	Interpreter interpreter;
 	char *sqlsentence = new char[1024];
 	while (true)

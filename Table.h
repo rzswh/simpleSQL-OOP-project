@@ -24,8 +24,11 @@ private:
     string errMsg;
     // 根据一条记录的数据，对表达式进行求值
     Record eval(const Record & r, vector<Expression*> exps);
+    ValueBase* eval(const Record & r, Expression* exps);
+    AggregationFunctionExpression* sortExpression; // Select语句中用于排序的累积表达式，必须要在分组求值的时候确定
     // 分治的思路将记录进行分组，分别进行求值之后返回
-    vector<Record> groupIntoTable(vector<Record *> tot, vector<AttributeExpression> agg, const vector<Expression *>& exps);
+    vector<Record> groupIntoTable(vector<Record *> tot, vector<Expression* > agg, 
+        const vector<Expression *>& exps, vector<ValueBase *>* sortMetric = nullptr);
 
     // 找到一个属性的下标。失败时返回属性个数。
     static int findAttributeIndex(vector<Attribute> attrs, string name);
@@ -88,7 +91,7 @@ public:
      *  只有函数AVG，SUM，MAX，MIN，COUNT需要这一特性。
      * @order_by 按照某一字段进行排序。这一字段不必出现在表达式exps里；但这一字段会参与分组
      * */
-    PrintableTable * select(vector<Expression *> exps, WhereClause c, vector<AttributeExpression> group_by, AttributeExpression* order_by);
+    PrintableTable * select(vector<Expression *> exps, WhereClause c, vector<Expression*> group_by, Expression* order_by);
     //
     virtual ~Table();
     ostream & show(ostream & out) const;
