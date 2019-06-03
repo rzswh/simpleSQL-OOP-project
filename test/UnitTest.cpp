@@ -53,6 +53,16 @@ void functionTest() {
     delete x1;
 }
 
+void valueTest() {
+    ValueBase * null = new Null<IntValue>();
+    ValueBase * one = new IntValue(1);
+    std::cout << (*null < *null) << std::endl;
+    std::cout << (*one < *one) << std::endl;
+    std::cout << (*null < *one) << std::endl;
+    std::cout << (*one < *null) << std::endl;
+}
+
 void unitTests() {
-    functionTest();
+    //functionTest();
+    valueTest();
 }

@@ -8,10 +8,10 @@ BoolValue ValueBase::operator==(const ValueBase & v) const {
 	return Null<BoolValue>();
 }
 BoolValue ValueBase::operator<(const ValueBase & v) const {
-	return Null<BoolValue>();
+	return BoolValue::makeNull(!v.isNull);
 }
 BoolValue ValueBase::operator>(const ValueBase & v) const {
-	return Null<BoolValue>();
+	return BoolValue::makeNull(false);
 }
 ostream & ValueBase::print(ostream & out) const {
 	auto ptr = &out;
@@ -36,8 +36,8 @@ BoolValue BoolValue::operator!() const {
 	return isNull ? Null<BoolValue>() : BoolValue(!this->v) ;
 }
 
-BoolValue BoolValue::makeNull() {
-	BoolValue null(false); null.isNull = true; 
+BoolValue BoolValue::makeNull(bool v) {
+	BoolValue null(v); null.isNull = true; 
 	return null;
 }
 

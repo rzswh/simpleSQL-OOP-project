@@ -1,6 +1,7 @@
 // encodings=UTF-8
 #include "Table.h"
 #include <algorithm>
+#include <cassert>
 using std::unique;
 
 Table::Table(string name, vector<Attribute> a, string primary)
@@ -258,6 +259,12 @@ PrintableTable * Table::select(vector<Expression *> exps, WhereClause c, vector<
         auto gp = groupIntoTable(tot, group_by, exps);
         ret.swap(gp);
     } else {
+        // 排序
+        if (order_by) {
+            sort(ret.begin(), ret.end(), [&](Record & a, Record & b) { 
+                return *eval(a, order_by) < *eval(b, order_by);
+            });
+        }
         // 对每条分别求函数
         vector<Expression *> outputExps;
         for (auto& i: exps) {
@@ -270,21 +277,13 @@ PrintableTable * Table::select(vector<Expression *> exps, WhereClause c, vector<
                 break;
             } else outputExps.push_back(ae);
         }
-        //sort(outputExps.begin(), outputExps.end(), [](Expression * a, Expression * b) { return a->toString() < b->toString(); });
-        //unique(outputExps.begin(), outputExps.end(), [](Expression * a, Expression * b) { return a->toString() < b->toString(); });
         exps.swap(outputExps);
         // 对所有元素一一求值
         vector<Record> newrecords;
-        for (auto& i: ret){
+        for (auto& i: ret) {
             newrecords.push_back(eval(i, exps));
         }
         ret.swap(newrecords);
-        // 排序
-        if (order_by) {
-            sort(ret.begin(), ret.end(), [&](Record & a, Record & b) { 
-                return *eval(a, order_by) < *eval(b, order_by);
-            });
-        }
     }
     // 信息打包返回
     PrintableTable * table = new PrintableTable(exps); // 复制表头
@@ -306,7 +305,9 @@ Record Table::eval(const Record & r, vector<Expression*> exps) {
 
 ValueBase* Table::eval(const Record & r, Expression* exp) {
     if (dynamic_cast<AttributeExpression *>(exp)) {
-        return r[Table::findAttributeIndex(attrs, dynamic_cast<AttributeExpression *>(exp)->toString())]->copy();
+        int ind = Table::findAttributeIndex(attrs, dynamic_cast<AttributeExpression *>(exp)->toString());
+        assert(ind < attrs.size());
+        return r[ind]->copy();
     } else if (dynamic_cast<ConstExpression *>(exp)) {
         return dynamic_cast<ConstExpression *>(exp)->eval();
     } else if (dynamic_cast<FunctionExpression *>(exp)) {

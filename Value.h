@@ -74,7 +74,7 @@ public:
     BoolValue operator||(const BoolValue & v) const;
     BoolValue operator!() const;
     BoolValue operator^(const BoolValue & v) const;
-    static BoolValue makeNull();
+    static BoolValue makeNull(bool v = false);
     //
 };
 
@@ -131,12 +131,12 @@ public:
         return nptr && this->operator T() == T(*nptr);
     }
     virtual BoolValue operator<(const ValueBase & v) const {
-        if (isNull || ::isNull(v)) return BoolValue::makeNull();
+        if (isNull || ::isNull(v)) return BoolValue::makeNull(isNull && !::isNull(v));  // 排序时NULL < 1被认为是true
         Value<T> * nptr = dynamic_cast<Value<T> *>(const_cast<ValueBase *>(&v));
         return nptr && this->operator T() < T(*nptr);
     }
     virtual BoolValue operator>(const ValueBase & v) const {
-        if (isNull || ::isNull(v)) return BoolValue::makeNull();
+        if (isNull || ::isNull(v)) return BoolValue::makeNull(!isNull && ::isNull(v));
         Value<T> * nptr = dynamic_cast<Value<T> *>(const_cast<ValueBase *>(&v));
         return nptr && this->operator T() > T(*nptr);
     }

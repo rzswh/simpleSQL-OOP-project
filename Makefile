@@ -1,4 +1,4 @@
-.PHONY: clean debug
+.PHONY: clean debug test
 
 all: main
 
@@ -10,7 +10,10 @@ main: main.cpp $(HEADER) $(OBJ)
 	g++ -o main main.cpp $(OBJ) $(ARGS)
 
 debug: main.cpp $(HEADER) $(OBJ) main
-	g++ -o main main.cpp $(OBJ) test/UnitTest.cpp $(ARGS) -g
+	g++ -o main main.cpp $(OBJ) $(ARGS) -g
+
+test: main.cpp $(HEADER) $(OBJ) main
+	g++ -o main main.cpp $(OBJ) test/UnitTest.cpp $(ARGS) -g -DTEST
 
 Value.o: Value.cpp Value.h
 	g++ -c $*.cpp -o $*.o $(ARGS)
@@ -18,10 +21,10 @@ Value.o: Value.cpp Value.h
 Attribute.o: Attribute.cpp Attribute.h
 	g++ -c $*.cpp -o $*.o $(ARGS)
 
-DataBase.o: DataBase.cpp DataBase.h Table.h sql.h
+DataBase.o: DataBase.cpp DataBase.h Table.h sql.h Value.h
 	g++ -c $*.cpp -o $*.o $(ARGS)
 
-Interpreter.o: Interpreter.cpp Interpreter.h manager.h sql.h
+Interpreter.o: Interpreter.cpp Interpreter.h manager.h sql.h Value.h
 	g++ -c $*.cpp -o $*.o $(ARGS)
 
 manager.o: manager.cpp manager.h sql.h DataBase.h
@@ -30,7 +33,7 @@ manager.o: manager.cpp manager.h sql.h DataBase.h
 PrintableTable.o: PrintableTable.cpp PrintableTable.h Attribute.h Value.h Record.h  Expression.h
 	g++ -c $*.cpp -o $*.o $(ARGS)
 
-sql.o: sql.cpp sql.h manager.h Expression.h Attribute.h WhereClause.h
+sql.o: sql.cpp sql.h manager.h Expression.h Attribute.h WhereClause.h Value.h
 	g++ -c $*.cpp -o $*.o $(ARGS)
 
 WhereClause.o: WhereClause.cpp WhereClause.h Value.h
