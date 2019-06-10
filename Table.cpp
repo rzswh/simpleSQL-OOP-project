@@ -318,9 +318,14 @@ ValueBase* Table::eval(const Record & r, Expression* exp) {
 }
 
 vector<Record> Table::groupIntoTable(vector<Record *> tot, vector<Expression* > agg, const vector<Expression *>& exps, vector<ValueBase *>* sortMetric) {
+    // 没有落到这一组的记录
     if (tot.size() == 0) return vector<Record>();
+    // 用于分组的表达式已经全部处理过，则可以对exps一一进行求值
     if (agg.size() == 0) {
+        // 以第一条记录为模板，对所有的表达式进行求值。
+        // 按照期望，只有累积函数的求值结果并不是正确的，需要在全部表达式基础上进行求值
         Record ret = eval(*(tot[0]), exps);
+        // 把累积函数找出来，在tot中所有记录的基础上进行求值
         for (int i = 0; i < exps.size(); i++) {
             auto e = exps[i];
             if (dynamic_cast<AggregationFunctionExpression*>(e)) {
@@ -329,26 +334,38 @@ vector<Record> Table::groupIntoTable(vector<Record *> tot, vector<Expression* > 
                 ret[i] = ag->evalAggregate(tot, attrs);
             }
         }
+        // 如果参与排序的表达式是一个累积函数，那么现在可以求值了，就把本组的值压入到数组中
         if (sortMetric) {
             sortMetric->push_back(sortExpression->evalAggregate(tot, attrs));
         }
         return vector<Record> ({ret});
     }
+    // agg中还有作为分组依据的表达式没有处理
+    // 取出第一个
     Expression * exp = agg[0];
     agg.erase(agg.begin());
     vector<Record> ret;
+    // 如果分组依据不是累积函数（本质是，这一表达式的值只需要一条记录就可以确定）
     // 从逻辑上讲，这一类函数不能参与真正的分组，而应该参与排序。应该只有最外面一层才能是累积函数。
     if (!dynamic_cast<AggregationFunctionExpression*>(exp)) {
+        // 排序之后，方可去重、合并
         sort(tot.begin(), tot.end(), [&](Record * a, Record * b) { return *eval(*a, exp) < *eval(*b, exp); });
         for (auto i = tot.begin(); i != tot.end(); i++) {
+            // 把tot记录中对于表达式exp同值的合并成为一组，放入newtot中
             auto last = i;
             vector<Record*> newtot;
             while ((i+1) != tot.end() && *eval(**(i+1), exp) == *eval(**i, exp)) i++;
             for (auto j = last; j != i+1; j++) newtot.push_back(*j);
+            // 递归地分组
             vector<Record> results = groupIntoTable(newtot, agg, exps, sortMetric);
+            // 将结果列表合并
             for (auto i: results) ret.push_back(i);
         }
-    } else {
+    }
+    // 分组依据是累积函数。根据设定，group by表达式中不能有累积函数，因此它只能是order by表达式
+    // 根据接口约定，它必须是agg中唯一的累积函数，而且必须位于agg数组首位
+    else {
+        // 先对agg中其他表达式进行分组
         sortExpression = dynamic_cast<AggregationFunctionExpression*>(exp);
         vector<ValueBase *> order;
         vector<Record> results = groupIntoTable(tot, agg, exps, &order);

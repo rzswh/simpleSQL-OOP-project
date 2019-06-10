@@ -1,5 +1,9 @@
 # 开发者说明文档
 
+## 术语说明
+
+本文档中数据表中的“属性”与“字段”是同义词。
+
 ## 结构图
 
 ![avatar](TableStructure.png)
@@ -10,6 +14,7 @@
 * `WhereClause`: Where子句类，将查询表达式以方便计算机计算的方式存储，并能判断某一条记录是否满足该子句的条件。
 * `ValueBase`: 数据类型的基类。这是一个抽象类（接口），为了方便在其上重载了一些比较运算符，以及方便进行输出的方法。
 * `Value<T>`: 为了将字符、整数、浮点数等不同的类型统一，用模板类`Value<T>`重新包装了这些类型。这些类型都继承于`ValueBase`。
+* `Expression` 及其子类: 运算表达式，用于表达select语句的表达式。比如字段名、常量、函数、运算。
 * `PrintableTable`: 将用于屏幕输出的属性和数据集合。可以视作另一种只读、不可修改、只可以打印的数据表。
 * `Sql`:解析输入的语句，根据输入调用合适的数据库接口，并且将结果输出。
 * `Interpreter`:查询语句语法分析与结果输出，通过Interpreter调用Manager类型，根据输入调用合适的数据库接口，并将结果输出。
@@ -27,6 +32,12 @@
 #### 私有成员变量
 **`vector<Record> data`**
 
+表格中所有记录的数据存储位置。
+
+**`AggregationFunctionExpression* sortExpression`**
+
+Select语句中用于排序的累积表达式。用于处理order by sum(字段)的情形。这一变量必须要在分组求值的时候确定。
+
 #### 公有成员变量
 **`const string name`**
 
@@ -37,6 +48,37 @@
 **`const string primary`**
 
 主键对应的属性名称。主键信息不储存在`Attribute`类中，通过在`Table`类中判断每一条属性的名称是否与主键相同，判断该条属性是否是主键。
+
+#### 私有成员函数
+**`Record eval(const Record & r, vector<Expression*> exps)`**
+
+根据一条记录的数据，对一组表达式进行求值，将结果以一条记录的形式返回。
+
+**`ValueBase* eval(const Record & r, Expression* exps)`**
+
+根据一条记录的数据，对单个表达式进行求值，将结果以一条记录的形式返回。
+
+**`vector<Record> groupIntoTable(vector<Record *> tot, vector<Expression* > agg, const vector<Expression *>& exps, vector<ValueBase *>* sortMetric = nullptr)`**
+
+分治的思路将一组记录tot按照对agg中各个函数求得的值进行分组，分组完成后再分别对exps中的表达式进行求值之后返回。
+
+因为分组过程顺带着可以完成排序的功能，所以需要排序的表达式放在agg首位值，
+相当于先按照order by表达式进行一次分组，并将分组结果按照其表达式求得的值进行排序。
+如果排序依据是一个累积函数则比较特殊，因为无法在分组过程中确定它的值，
+而只能在分组完成后确定，因此采取排序后置的策略，先按照agg中其他表达式分好组，
+在分成组的时候顺带着把order by表达式求值，最后在回溯到处理order by表达式一层的时候
+将结果合并起来。
+
+agg只有第一个表达式可以为累积函数，其他的都不能是累积函数，可以为字段表达式、
+普通函数表达式（如ADD DATE）等可以通过作用在*单条记录*上得到值的函数。
+
+sortMetric是一个辅助变量，如果是非空地址指针，那么每当在递归边界处完成一个分组时，
+指针指向的数组插入一个该组对this->sortExpression求得的值。
+可以用于当order by表达式为累积函数的情形。
+
+**\[static\]`int findAttributeIndex(vector<Attribute> attrs, string name)`**
+
+传入属性的名称，返回它在attrs中的下标。失败时返回attrs中属性个数。
 
 #### 公有成员函数
 **`Table(string name, vector<Attribute> a, string primary)`**
@@ -88,9 +130,31 @@
 
 **`PrintableTable * select(vector<string> attrFilter, WhereClause c)`**
 
+select 第一阶段实现的朴素版本。现已废弃。
+
 选出满足`whereClause`的行，取出包含在`attrFilter`中的属性，组成一张新表并返回。
 
 `attrFilter`: 需要选出的属性名称。如果欲选出所有属性，请传入一个仅包含字符串“*”的向量。
+
+**`PrintableTable * select(vector<Expression *> exps, WhereClause c, vector<Expression*> group_by, Expression* order_by)`**
+
+select 表内分组排序版本。
+
+选出满足`whereClause`的行，按照`group_by`分组、`order_by`排序，对`exps`中表达式进行求值，得到各列，组成一张新表并返回。
+传入的表达式对象`Expression`不会被删除，需要调用者手动进行内存回收。
+
+`attrFilter`: 需要选出的属性名称。如果欲选出所有属性，请传入一个仅包含字符串“`*`”的向量。
+
+`group_by`: 需要特别分组的属性。按照其中属性进行分组，所有表达式只作用于同一组上。举例：
+
+`SELECT stu_name, COUNT(*) from oop_info GROUP BY stu_name;`
+
+选出同名学生名称和人数。
+
+不过考虑到`exps`中会有属性表达式，最终分组结果由`exps`、`group_by`、`order_by`中的属性表达式共同决定。
+只有函数`AVG`，`SUM`，`MAX`，`MIN`，`COUNT`需要这一特性。
+
+`order_by`: 按照某一字段进行排序。这一字段不必出现在表达式`exps`里；但这一字段会参与分组
 
 **`virtual ~Table()`**
 
@@ -109,16 +173,35 @@
 
 数据列表。和`Table`不同之处在于，这里data使用二维动态数组存储。
 
+#### 私有成员函数
+
+**`ostream & printHead(ostream & os) const`**
+
+打印表头，包含属性、表达式名称。
+
+**`ostream & printData(ostream & os) const`**
+
+打印表格内容，包含表格中存储的数据。
+
 #### 公有成员函数
 **`PrintableTable(vector<Attribute> a)`**
+**`PrintableTable(vector<Expression *>  exps)`**
 
 **`void insert(ValueBase ** vs)`**
 
 插入一条记录。
 
+**`void setData(const vector<Record> & data)`**
+
+通过一组Record直接设置数据。
+
 **`ostream & print(ostream & out)`**
 
-通过给定的`ostream`将表的属性和全部数据输出。因此，你可以通过`cout`输出，也可以输出到文件中，还可以通过`stringstream`转成`string`。
+通过给定的`ostream`将表的属性和全部数据输出。因此，理论上你可以通过`cout`输出，也可以输出到文件中，还可以通过`stringstream`转成`string`。
+
+**`ofstream & print(ofstream & out)`**
+
+针对文件输出的特殊版本print。只输出表格内容，不输出表头。
 
 **`~PrintableTable()`**
 
@@ -261,6 +344,92 @@ NULL没有对应的类型，在传递数据对象指针时用`nullptr`代表。
 
 **`~Value()`**
 
+## Expression.h
+
+### class Expression
+
+表达式抽象基类。
+
+表达式用于select语句。在将来版本中可能将用于WhereClause语句。
+
+#### 公有成员函数
+
+**`string toString() const = 0`**
+
+将Expression转为其所表达语句的字符串形式。
+
+### class AttributeExpression : public Expression
+
+属性表达式。它的作用相当于一个未知数，当作用到某一条记录上时，表达式的值为该记录此属性对应的值。
+
+#### 私有成员变量
+
+**`string name`**
+
+属性名称。
+
+#### 公有成员函数
+
+**`AttributeExpression(const string& name)`**
+
+**`string toString() override`**
+
+### ConstExpression : public Expression
+
+常量表达式。它无需作用在记录上也可以求值。
+
+#### 私有成员变量
+
+**`ValueBase * val`**
+
+常量的值。
+
+#### 公有成员函数
+
+**`ConstExpression(ValueBase * v)`**
+
+**`string toString() override`**
+
+**`ValueBase * eval()`**
+
+返回常量的值。
+
+### class FunctionExpression : public Expression
+
+函数表达式。它是一个抽象类。每个函数都应该有一个作用于单条记录的接口eval。
+
+#### 公有成员函数
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs) = 0`**
+
+传入一条记录和记录各元素对应的属性名称，返回一个求得的值。
+
+### class AggregationFunctionExpression : public FunctionExpression
+
+累积函数表达式。它是一个抽象类。除了eval，它还规定了作用于一群记录的接口。
+
+这一类函数有：AVG，SUM，MAX，MIN，COUNT（暂未全部实现）等。
+它们需要一“组”而不是一“条”记录，因此单独抽象出来。
+
+#### 公有成员函数
+
+**`ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs) = 0`**
+
+传入一系列记录和记录各元素对应的属性名称，进行累积运算，返回一个求得的值。
+
+### class CountFunction : public AggregationFunctionExpression
+
+COUNT函数。接受一个表达式，计数有多少使表达式结果非NULL的记录。
+
+#### 公有成员函数
+
+**`CountFunction(Expression *exp)`**
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs)`**
+
+**`ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs)`**
+
+**`string toString()`**
 
 ## sql.h
 
