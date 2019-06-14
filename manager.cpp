@@ -163,9 +163,9 @@ void Manager::Select(SQLSelect& statement)
 	if (current_db.length() == 0) return;
 	Table *tb = GetDB()->getTB(statement.get_tb_name());
 	if (tb == NULL) return;
-	WhereClause c(statement.s,statement.o);
+	//WhereClause c(statement.s,statement.o);
 	//PrintableTable * res = tb->select(estatement.attrFilter,c);
-	PrintableTable * res = tb->select(statement.get_expressions(), c, 
+	PrintableTable * res = tb->select(statement.get_expressions(), statement.where_clause, 
 			statement.get_group_by(), statement.get_order_by());
 	if (!statement.if_load_file()) {
 		res->print(cout);

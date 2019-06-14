@@ -102,9 +102,9 @@ bool Table::del(WhereClause c) {
 bool Table::checkType(AttributeType att, ValueBase * v) {
     if (att == ATTR_CHAR && !dynamic_cast<Value<string>*> (v) )
         return false;
-    if (att == ATTR_DOUBLE && !dynamic_cast<Value<double>*> (v))
+    if (att == ATTR_DOUBLE && !dynamic_cast<DoubleValue*> (v))
         return false;
-    if (att == ATTR_INT && !dynamic_cast<Value<int>*> (v) )
+    if (att == ATTR_INT && !dynamic_cast<IntValue*> (v) )
         return false;
     return true;
 }
@@ -229,11 +229,12 @@ PrintableTable * Table::select(vector<string> attrFilter, WhereClause c) {
     return table;
 }
 
-PrintableTable * Table::select(vector<Expression *> exps, WhereClause c, vector<Expression*> group_by, Expression* order_by) {
+PrintableTable * Table::select(vector<Expression *> exps, Expression * c, vector<Expression*> group_by, Expression* order_by) {
     // 先根据WhereClause过滤记录
     vector<Record> ret;
     for (auto& i: data) {
-        if (c.test(i, attrs))
+        auto res = c ? dynamic_cast<BoolValue *>(c->eval(i, attrs)) : nullptr;
+        if (!c || res && res->isTrue())
             ret.push_back(i);
     }
     typedef AggregationFunctionExpression AFE;
@@ -246,6 +247,7 @@ PrintableTable * Table::select(vector<Expression *> exps, WhereClause c, vector<
         else if (dynamic_cast<AttributeExpression *>(i))
             group_by.push_back(i);
     }
+    // 如果含有累积函数，则分组
     if (aggregate) {
         // 分组依据不需要去重，不用担心重复
         //sort(group_by.begin(), group_by.end(), [](Expression * a, Expression * b) { return a->toString() < b->toString(); });
@@ -269,13 +271,14 @@ PrintableTable * Table::select(vector<Expression *> exps, WhereClause c, vector<
         vector<Expression *> outputExps;
         for (auto& i: exps) {
             auto ae = dynamic_cast<AttributeExpression*>(i);
+            // 如果遇到"*"，则无条件将所有属性加入进去，不管是否会重复
             if (ae && ae->toString() == "*") {
-                outputExps.clear();
+                //outputExps.clear();
                 for (auto j: attrs) {
                     outputExps.push_back(new AttributeExpression(j.name));
                 }
-                break;
-            } else outputExps.push_back(ae);
+                //break;
+            } else outputExps.push_back(i);
         }
         exps.swap(outputExps);
         // 对所有元素一一求值
@@ -304,16 +307,15 @@ Record Table::eval(const Record & r, vector<Expression*> exps) {
 
 
 ValueBase* Table::eval(const Record & r, Expression* exp) {
+    return exp->eval(r, attrs);
     if (dynamic_cast<AttributeExpression *>(exp)) {
         int ind = Table::findAttributeIndex(attrs, dynamic_cast<AttributeExpression *>(exp)->toString());
         assert(ind < attrs.size());
         return r[ind]->copy();
     } else if (dynamic_cast<ConstExpression *>(exp)) {
         return dynamic_cast<ConstExpression *>(exp)->eval();
-    } else if (dynamic_cast<FunctionExpression *>(exp)) {
-        return dynamic_cast<FunctionExpression *>(exp)->eval(r, attrs);
     } else {
-        return ValueBase::newNull();
+        return exp->eval(r, attrs);
     }
 }
 
@@ -402,6 +404,7 @@ int Table::findAttributeIndex(vector<Attribute> attrs, string name) {
     for (int i = 0; i < attrs.size(); i++) {
         if (attrs[i].name == name) return i;
     }
+    std::cerr << name << std::endl;
     return attrs.size();
 }
 

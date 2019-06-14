@@ -84,6 +84,7 @@ public:
      * select 表内分组排序版本
      * 选出满足whereClause的行，按照group_by分组、order_by排序，对exps中表达式进行求值，得到各列，组成一张新表并返回。
      * 传入的表达式对象Expression不会被删除，需要调用者手动进行内存回收。
+     * @where_clause 新版本中进化为一个表达式，需要最终返回一个BoolValue，否则一律当做NULL处理。
      * @attrFilter 需要选出的属性名称。如果欲选出所有属性，请传入一个仅包含字符串“*”的向量。
      * @group_by 需要特别分组的属性。按照其中属性进行分组，所有表达式只作用于同一组上。举例：
      *  SELECT stu_name, COUNT(*) from oop_info GROUP BY stu_name; 选出同名学生名称和人数。
@@ -91,7 +92,7 @@ public:
      *  只有函数AVG，SUM，MAX，MIN，COUNT需要这一特性。
      * @order_by 按照某一字段进行排序。这一字段不必出现在表达式exps里；但这一字段会参与分组
      * */
-    PrintableTable * select(vector<Expression *> exps, WhereClause c, vector<Expression*> group_by, Expression* order_by);
+    PrintableTable * select(vector<Expression *> exps, Expression* where_clause, vector<Expression*> group_by, Expression* order_by);
     //
     virtual ~Table();
     ostream & show(ostream & out) const;

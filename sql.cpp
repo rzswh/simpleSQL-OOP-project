@@ -1,5 +1,6 @@
 #include"sql.h"	
 #include<stack>
+#include <regex>
 
 string to_lower(string str){
 	transform(str.begin(),str.end(),str.begin(),::tolower);
@@ -103,13 +104,93 @@ Expression * parseExpression(string sentence) {
 	}
 }
 
+int getOperatorRank(string op) {
+	op = to_lower(op);
+	if (op == "or") return 1;
+	else if (op == "and") return 2;
+	else if (op == "not") return 3;
+	else if (op == "=" || op == "<" || op == ">") return 4;
+	else if (op == "+" || op == "-") return 5;
+	else if (op == "*" || op == "/" || op == "%" || op == "mod") return 6;
+	else if (op == "(") return 7;
+	else if (op == ")") return 1;
+	else return 0;
+}
+// if rank left < rank right
+bool compareOperator(string op1, string op2) {
+	if (op1 == "(") return op2 != ")";
+	else return getOperatorRank(op1) < getOperatorRank(op2);
+}
+bool isFunction(string func) {
+	func = to_lower(func);
+	return func == "count";
+}
+
 Expression * readExpressionFromString(const vector<string>& sql_vector, unsigned int & pos) {
-	string exp = sql_vector[pos++];
-	if (sql_vector[pos] == "(") {
-		do exp += sql_vector[pos];
-		while (sql_vector[pos++] != ")");
-	}
-	return parseExpression(exp);
+	//string exp = sql_vector[pos++];
+	vector<string> oprs;
+	vector<Expression *> results;
+	int opr_rank;
+	bool lastOperand = false;// 当连续出现两个操作数的时候，就该认为到达结尾了
+	do {
+		const string & exp = sql_vector[pos++];
+		opr_rank = getOperatorRank(exp); // 0 if not operator
+		if (isFunction(exp)) {
+			oprs.push_back(exp);
+			// sql_vector[pos]应当为'('，把左括号也压入栈中
+			oprs.push_back(sql_vector[pos++]);
+			lastOperand = false; opr_rank = 1;
+		} else if ((opr_rank == 0 || exp == "*") && !lastOperand) { // * 具有二义性
+			// 字符串常量、数字常量
+			if (exp[0] == '\'' || exp[0] == '"' || regex_match(exp, regex("[0-9.+-]+")))
+				results.push_back(new ConstExpression(stringToValue(exp)));
+			else results.push_back(new AttributeExpression(exp));  // attr
+			lastOperand = true;
+		}
+		else {
+			// '(' < '+'; ')' < '+'; '+' < '('; '(' = ')'
+			while (!oprs.empty() && !compareOperator(oprs.back(), exp)) {
+				string opr = to_lower(oprs.back()); oprs.pop_back();
+				if (opr == "(") {
+					string func_name = !oprs.empty() ? to_lower(oprs.back()) : ""; 
+					if (!oprs.empty()) oprs.pop_back();
+					// 函数的左括号
+					if (func_name == "count") {
+						results.back() = new CountFunction(results.back());
+					} else if (func_name != "") oprs.push_back(func_name); // 只是个小括号，把不该弹出来的压回去
+					break; // 不能让右括号继续比下去
+				} 
+				// 一元操作符
+				else if (opr == "not") {
+					auto x = results.back(); results.pop_back();
+					results.push_back(new LogicNotOperator(x));
+				}
+				// 二元操作符
+				else {//if (opr != "not") {
+					auto x = results.back(); results.pop_back();
+					auto y = results.back(); results.pop_back();
+					if (opr == "+") results.push_back(new PlusOperator(y, x));
+					else if (opr == "-") results.push_back(new MinusOperator(y, x));
+					else if (opr == "*") results.push_back(new MultiplyOperator(y, x));
+					else if (opr == "/") results.push_back(new DivideOperator(y, x));
+					else if (opr == "%" || opr == "mod") results.push_back(new ModOperator(y, x));
+					else if (opr == "=") results.push_back(new EqualOperator(y, x));
+					else if (opr == "<") results.push_back(new LessOperator(y, x));
+					else if (opr == ">") results.push_back(new GreaterOperator(y, x));
+					else if (opr == "and") results.push_back(new LogicAndOperator(y, x));
+					else if (opr == "or") results.push_back(new LogicOrOperator(y, x));
+					else if (opr == "xor") results.push_back(new LogicXorOperator(y, x));
+					else {
+						cerr << "Wrong operator \"" << opr << "\"" << endl;
+					}
+				}
+			}
+			if (exp != ")") oprs.push_back(exp);
+			lastOperand = exp == ")"; // 只有这个后面不能接操作数
+		}
+	} while (opr_rank || lastOperand); // 读到的不是操作数，又不在运算符中，那么读到了奇怪的命令
+	pos --;
+	return results.front();
 }
 
 // 读一系列用“, ”连接的表达式
@@ -132,14 +213,14 @@ ValueBase * stringToValue(string tmp) {
 		vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\"')-1));
 	} 
 	else if(tmp.find('.')!=string::npos){
-		vb = new Value<double>(stolld(tmp));
+		vb = new DoubleValue(stolld(tmp));
 	}
 	else if (to_upper(tmp) == "NULL") {
 		return new Null<ValueBase>();
 	}
 	else {
 		int ttt=atoi(tmp.c_str());
-		vb = new Value<int>(ttt);
+		vb = new IntValue(ttt);
 	}
 	return vb;
 }
@@ -320,8 +401,10 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 	// ; / from / where / group / order / into / 
 	while (pos + 1 < sql_vector.size() && sql_vector[pos] != ";") { /* sql statement like: "select * from tb;". */
 		string cmd = to_lower(sql_vector[pos]);
-		if (cmd == "where") 
-			pos = buildWhereClauseFrom(sql_vector, o, s, pos);
+		if (cmd == "where") {
+			pos++; // where -> [expression]
+			where_clause = readExpressionFromString(sql_vector, pos);
+		}
 		else if (cmd == "from") { // 题目要求一定要有from
 			pos++; // from -> [table_name]
 			tb_name = sql_vector[pos];
@@ -349,13 +432,13 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 }
 
 SQLSelect::~SQLSelect() {
-	for (auto i: s) 
-		delete std::get<2>(i);
+	// for (auto i: s) 
+	// 	delete std::get<2>(i);
 	for (auto i: expressions)
 		delete i;
 	for (auto i: group_by)
 		delete i;
-	delete order_by;
+	delete order_by, where_clause;
 }
 
 

@@ -3,12 +3,24 @@
 
 Expression::~Expression() {}
 
+ValueBase * AttributeExpression::eval(const Record &r, const vector<Attribute> & attrs) {
+    for (int i = 0; i < attrs.size(); i++) {
+        if (name == attrs[i].name)
+            return r[i]->copy();
+    }
+    return new Null<ValueBase>();
+}
+
 string AttributeExpression::toString() const {
     return name;
 }
 
 ValueBase * ConstExpression::eval() {
     return val->copy();
+}
+
+ValueBase * ConstExpression::eval(const Record &, const vector<Attribute> & attrs) {
+    return this->eval();
 }
 
 ConstExpression::~ConstExpression() {
@@ -22,6 +34,9 @@ string ConstExpression::toString() const {
     ss >> ret;
     return ret;
 }
+
+CountFunction::CountFunction(Expression *exp) : exp(exp) 
+{}
 
 CountFunction ::~CountFunction() {
     delete exp;
@@ -52,5 +67,169 @@ ValueBase * CountFunction::evalAggregate(vector<Record *>& rs, const vector<Attr
 }
 
 string CountFunction::toString() const {
-    return string("COUNT(") + exp->toString() + ")";
+    return "COUNT(" + exp->toString() + ")";
+}
+
+OperatorExpression::OperatorExpression(Expression * a, Expression * b, string sym) : left(a),right(b), symbol(sym)
+{}
+
+OperatorExpression::~OperatorExpression() {
+    delete left, right;
+}
+
+string OperatorExpression::toString() const {
+    return left->toString() + symbol + right->toString();
+}
+
+EqualOperator::EqualOperator(Expression * a, Expression * b) : OperatorExpression(a, b, "=") {}
+LessOperator::LessOperator(Expression * a, Expression * b) : OperatorExpression(a, b, "<") {}
+GreaterOperator::GreaterOperator(Expression * a, Expression * b) : OperatorExpression(a, b, ">") {}
+
+ValueBase * EqualOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    if (isNull(a) || isNull(b)) return new Null<BoolValue>();
+    ValueBase * ret;
+    // 单独处理不同数值类型相互比较的情形
+    if (dynamic_cast<IntValue *>(a) && dynamic_cast<DoubleValue *>(b)) 
+        ret = new BoolValue(dynamic_cast<IntValue *>(a)->operator int() == dynamic_cast<DoubleValue *>(b)->operator double());
+    else if (dynamic_cast<DoubleValue *>(a) && dynamic_cast<IntValue *>(b))
+        ret = new BoolValue(dynamic_cast<IntValue *>(b)->operator int() == dynamic_cast<DoubleValue *>(a)->operator double());
+    else ret = new BoolValue(*a == *b);
+    delete a, b;
+    return ret;
+}
+ValueBase * LessOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    if (isNull(a) || isNull(b)) return new Null<BoolValue>();
+    ValueBase * ret;
+    if (dynamic_cast<IntValue *>(a) && dynamic_cast<DoubleValue *>(b)) 
+        ret = new BoolValue(dynamic_cast<IntValue *>(a)->operator int() < dynamic_cast<DoubleValue *>(b)->operator double());
+    else if (dynamic_cast<DoubleValue *>(a) && dynamic_cast<IntValue *>(b)) 
+        ret = new BoolValue(dynamic_cast<IntValue *>(b)->operator int() > dynamic_cast<DoubleValue *>(a)->operator double());
+    else ret = new BoolValue(*a < *b);
+    delete a, b;
+    return ret;
+}
+ValueBase * GreaterOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    if (isNull(a) || isNull(b)) return new Null<BoolValue>();
+    ValueBase * ret;
+    if (dynamic_cast<IntValue *>(a) && dynamic_cast<DoubleValue *>(b)) 
+        ret = new BoolValue(dynamic_cast<IntValue *>(a)->operator int() > dynamic_cast<DoubleValue *>(b)->operator double());
+    else if (dynamic_cast<DoubleValue *>(a) && dynamic_cast<IntValue *>(b)) 
+        ret = new BoolValue(dynamic_cast<IntValue *>(b)->operator int() < dynamic_cast<DoubleValue *>(a)->operator double());
+    else ret = new BoolValue(*a > *b);
+    delete a, b;
+    return ret;
+}
+
+
+PlusOperator::PlusOperator(Expression * a, Expression * b) : OperatorExpression(a, b, "+") {}
+ValueBase * PlusOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    ValueBase * ret;
+    auto inta = dynamic_cast<IntValue*>(a), intb = dynamic_cast<IntValue*>(b);
+    auto dba = convertT<DoubleValue>(a), dbb = convertT<DoubleValue>(b);
+    if (inta && intb) ret = new IntValue(*inta + *intb);
+    else if (dba && dbb) ret = new DoubleValue(*dba + *dbb);
+    else ret = new Null<DoubleValue>();
+    delete a, b, dba, dbb;
+    return ret;
+}
+MinusOperator::MinusOperator(Expression * a, Expression * b) : OperatorExpression(a, b, "-") {}
+ValueBase * MinusOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    ValueBase * ret;
+    auto inta = dynamic_cast<IntValue*>(a), intb = dynamic_cast<IntValue*>(b);
+    auto dba = convertT<DoubleValue>(a), dbb = convertT<DoubleValue>(b);
+    if (inta && intb) ret = new IntValue(*inta - *intb);
+    else if (dba && dbb) ret = new DoubleValue(*dba - *dbb);
+    else ret = new Null<DoubleValue>();
+    delete a, b, dba, dbb;
+    return ret;
+}
+MultiplyOperator::MultiplyOperator(Expression * a, Expression * b) : OperatorExpression(a, b, "*") {}
+ValueBase * MultiplyOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    ValueBase * ret;
+    auto inta = dynamic_cast<IntValue*>(a), intb = dynamic_cast<IntValue*>(b);
+    auto dba = convertT<DoubleValue>(a), dbb = convertT<DoubleValue>(b);
+    if (inta && intb) ret = new IntValue(*inta * *intb);
+    else if (dba && dbb) ret = new DoubleValue(*dba * *dbb);
+    else ret = new Null<DoubleValue>();
+    delete a, b, dba, dbb;
+    return ret;
+}
+DivideOperator::DivideOperator(Expression * a, Expression * b) : OperatorExpression(a, b, "/") {}
+ValueBase * DivideOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    ValueBase * ret;
+    // auto dba = convertT<DoubleValue>(a), dbb = convertT<DoubleValue>(b);
+    auto inta = dynamic_cast<IntValue*>(a), intb = dynamic_cast<IntValue*>(b);
+    auto dba = dynamic_cast<DoubleValue*>(a), dbb = dynamic_cast<DoubleValue*>(b);
+    if (inta && intb && intb->operator int()) ret = new IntValue(*inta / *intb);
+    else if (dba && dbb && dbb->operator double()) ret = new DoubleValue(*dba / *dbb);
+    else ret = new Null<DoubleValue>();
+    delete a, b;
+    return ret;
+}
+ModOperator::ModOperator(Expression * a, Expression * b) : OperatorExpression(a, b, "%") {}
+ValueBase * ModOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    ValueBase * ret;
+    auto inta = convertT<IntValue>(a), intb = convertT<IntValue>(b);
+    if (inta && intb && intb ->operator int()) ret = new IntValue(*inta % *intb);
+    else ret = new Null<IntValue>();
+    delete a, b, inta, intb;
+    return ret;
+}
+
+
+LogicAndOperator::LogicAndOperator(Expression * a, Expression * b) : OperatorExpression(a, b, " and ") {}
+ValueBase * LogicAndOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    ValueBase * ret;
+    if (isNull(a) || isNull(b)) ret = BoolValue::newNull();
+    auto ba = dynamic_cast<BoolValue *>(a), bb = dynamic_cast<BoolValue *>(b);
+    if (ba && bb) ret = new BoolValue(*ba && *bb);
+    else ret = new Null<BoolValue>();
+    delete a, b;
+    return ret;
+}
+LogicOrOperator::LogicOrOperator(Expression * a, Expression * b) : OperatorExpression(a, b, " or ") {}
+ValueBase * LogicOrOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    ValueBase * ret;
+    if (isNull(a) || isNull(b)) ret = BoolValue::newNull();
+    auto ba = dynamic_cast<BoolValue *>(a), bb = dynamic_cast<BoolValue *>(b);
+    if (ba && bb) ret = new BoolValue(*ba || *bb);
+    else ret = new Null<BoolValue>();
+    delete a, b;
+    return ret;
+}
+LogicXorOperator::LogicXorOperator(Expression * a, Expression * b) : OperatorExpression(a, b, " xor ") {}
+ValueBase * LogicXorOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = left->eval(r, attrs), b = right->eval(r, attrs);
+    ValueBase * ret;
+    if (isNull(a) || isNull(b)) ret = BoolValue::newNull();
+    auto ba = dynamic_cast<BoolValue *>(a), bb = dynamic_cast<BoolValue *>(b);
+    if (ba && bb) ret = new BoolValue(*ba ^ *bb);
+    else ret = new Null<BoolValue>();
+    delete a, b;
+    return ret;
+}
+
+LogicNotOperator::LogicNotOperator(Expression * a) : exp(a) {}
+ValueBase * LogicNotOperator::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto a = exp->eval(r, attrs);
+    ValueBase * ret;
+    if (isNull(a)) ret = BoolValue::newNull();
+    auto ba = dynamic_cast<BoolValue *>(a);
+    if (ba) ret = new BoolValue(!*ba);
+    else ret = new Null<BoolValue>();
+    delete a;
+    return ret;
+}
+string LogicNotOperator::toString() const {
+    return "not " + exp->toString();
 }

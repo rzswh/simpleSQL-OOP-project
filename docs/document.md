@@ -319,7 +319,7 @@ select 表内分组排序版本。
 
 `template<class T> class Value<T>: public ValueBase`
 
-程序内用`Value<int>`, `Value<double>`, `Value<string>`等类代表各种数据类型。
+程序内用`IntValue`, `DoubleValue`, `Value<string>`等类代表各种数据类型。（旧版使用`Value<int>`、`Value<double>`，改版后不再使用。）
 
 NULL没有对应的类型，在传递数据对象指针时用`nullptr`代表。
 

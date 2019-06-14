@@ -16,13 +16,13 @@ bool WhereClause::test(const Record & r, const vector<Attribute> & va) const {
             v = convertT<DoubleValue>(const_cast<ValueBase*>(v));
         }
         if (std::get<1>(s) == ARITH_GREATER) {
-            return v && *v > *sv;
+            return v && (*v > *sv).isTrue();
         }
         else if (std::get<1>(s) == ARITH_LESS) {
-            return v && *v < *sv;
+            return v && (*v < *sv).isTrue();
         }
         else if (std::get<1>(s) == ARITH_EQUAL) {
-            return v && *v == *sv;
+            return v && (*v == *sv).isTrue();
         }
         else {/* undefined */}
         flag = false;

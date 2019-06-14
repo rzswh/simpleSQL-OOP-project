@@ -148,8 +148,9 @@ public:
 	string get_load_file_name();
 	void Parse(vector<string> sql);
 	vector<string> attrFilter;
-	vector<WhereClause::SubSentence> s; 
-	vector<pair<LogicOperation, int> > o;
+	Expression * where_clause;
+	// vector<WhereClause::SubSentence> s; 
+	// vector<pair<LogicOperation, int> > o;
 	vector<Expression *> get_expressions();
 	vector<Expression *> get_group_by();
 	Expression * get_order_by();

@@ -35,8 +35,8 @@ public:
      * 应当如下构造：
      * vector<WhereClause::SubSentence> s; vector<pair<LogicOperation, int> > o;
      * s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>("student_name", ARITH_EQUAL, new Value<string>("张三"), 0) ); // A
-     * s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>("student_id", ARITH_LESS, new Value<int>(2017012323), 1) ); // B
-     * s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>("student_gpa", ARITH_GREATER, new Value<double>(3.97), 3) ); // C
+     * s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>("student_id", ARITH_LESS, new IntValue(2017012323), 1) ); // B
+     * s.push_back( make_tuple<string, ArithmicOperation, ValueBase *, int>("student_gpa", ARITH_GREATER, new DoubleValue(3.97), 3) ); // C
      * o.push_back( make_pair<LogicOperation, int>(LOGIC_AND, 2) ); // X
      * o.push_back( make_pair<LogicOperation, int>(LOGIC_OR, 4) ); // Y
      * 这个查询语句形如 A X B Y C, 经过后缀表达式转化后变为 A B X C Y, 每个字母在序列中的位置即它对应的rank。

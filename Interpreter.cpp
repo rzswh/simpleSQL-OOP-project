@@ -14,6 +14,7 @@ Interpreter::~Interpreter(){delete manager;}
 bool seg(char c){
 	if(c=='='||c=='>'||c=='<') return true;
 	if(c=='('||c==')'||c==','||c==';') return true;
+	if(c=='+'||c=='-'||c=='*'||c=='/' || c=='%') return true;
 	return false;
 }
 
