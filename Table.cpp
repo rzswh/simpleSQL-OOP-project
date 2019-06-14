@@ -236,6 +236,7 @@ PrintableTable * Table::select(vector<Expression *> exps, Expression * c, vector
         auto res = c ? dynamic_cast<BoolValue *>(c->eval(i, attrs)) : nullptr;
         if (!c || res && res->isTrue())
             ret.push_back(i);
+        delete res;
     }
     typedef AggregationFunctionExpression AFE;
     typedef AttributeExpression AE;
