@@ -42,7 +42,7 @@ public:
 };
 
 /**
- * 函数基类。每个函数都要保证能作用在单独的一个元素上。
+ * 函数基类。
  * */
 class FunctionExpression : public Expression {
 public:

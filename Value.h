@@ -80,10 +80,6 @@ public:
     //
 };
 
-/**
- * 程序内用Value<int>, Value<double>, Value<string>等类代表各种数据类型。
- * 问题：Value<int>和Value<double>比较总是false。
- */
 template <class T>
 class Value : public ValueBase{
     T v;

@@ -13,7 +13,7 @@
 * `Record`: 一条记录，即一行内的数据。
 * `WhereClause`: Where子句类，将查询表达式以方便计算机计算的方式存储，并能判断某一条记录是否满足该子句的条件。
 * `ValueBase`: 数据类型的基类。这是一个抽象类（接口），为了方便在其上重载了一些比较运算符，以及方便进行输出的方法。
-* `Value<T>`: 为了将字符、整数、浮点数等不同的类型统一，用模板类`Value<T>`重新包装了这些类型。这些类型都继承于`ValueBase`。
+* `IntValue`、`DoubleValue`、`BoolValue`等ValueBase的子类：各种数据类型。
 * `Expression` 及其子类: 运算表达式，用于表达select语句的表达式。比如字段名、常量、函数、运算。
 * `PrintableTable`: 将用于屏幕输出的属性和数据集合。可以视作另一种只读、不可修改、只可以打印的数据表。
 * `Sql`:解析输入的语句，根据输入调用合适的数据库接口，并且将结果输出。
@@ -136,14 +136,16 @@ select 第一阶段实现的朴素版本。现已废弃。
 
 `attrFilter`: 需要选出的属性名称。如果欲选出所有属性，请传入一个仅包含字符串“*”的向量。
 
-**`PrintableTable * select(vector<Expression *> exps, WhereClause c, vector<Expression*> group_by, Expression* order_by)`**
+**`PrintableTable * select(vector<Expression *> exps, Expression* where_clause, vector<Expression*> group_by, Expression* order_by)`**
 
 select 表内分组排序版本。
 
-选出满足`whereClause`的行，按照`group_by`分组、`order_by`排序，对`exps`中表达式进行求值，得到各列，组成一张新表并返回。
+选出满足`where_clause`的行，按照`group_by`分组、`order_by`排序，对`exps`中表达式进行求值，得到各列，组成一张新表并返回。
 传入的表达式对象`Expression`不会被删除，需要调用者手动进行内存回收。
 
-`attrFilter`: 需要选出的属性名称。如果欲选出所有属性，请传入一个仅包含字符串“`*`”的向量。
+`exps`: 需要进行求值的表达式。接口扩展以后，传入的可以是"*"、属性名称、函数表达式、运算表达式等等一切可以归纳为一个表达式的对象。
+
+`where_clause`: where子句。select函数选出使`where_clause`运算结果是`True`的记录。若表达式结果为`False`、`NULL`、非布尔类型，记录都不会被选中。
 
 `group_by`: 需要特别分组的属性。按照其中属性进行分组，所有表达式只作用于同一组上。举例：
 
@@ -292,16 +294,32 @@ select 表内分组排序版本。
 
 数据库内所储存数据的抽象基类。
 
+#### 保护成员变量
+**`bool isNull`**
+
+本对象是否是NULL。如果为假，那么这个对象表示的是值本身；
+如果为真，无论对象为`ValueBase`的哪个派生类，存储的值是什么，都只表示NULL的含义。
+
+#### 保护成员函数
+
+**`ValueBase(bool null = false)`**
+
+这是一个不对外部开放的构造函数。这允许ValueBase的工厂函数通过调用此构造函数来生成NULL对象。
+
+**`virtual void setNull() final`**
+
+允许子类通过这个函数来将本对象设为NULL。不过由于`isNull`不是私有而是保护的，这个函数意义不大。
+
 #### 公有成员方法
-**`virtual bool operator==(const ValueBase & v) const = 0`**
+**`virtual BoolValue operator==(const ValueBase & v) const = 0`**
 
-**`virtual bool operator>(const ValueBase & v) const = 0`**
+**`virtual BoolValue operator>(const ValueBase & v) const = 0`**
 
-**`virtual bool operator<(const ValueBase & v) const = 0`**
+**`virtual BoolValue operator<(const ValueBase & v) const = 0`**
 
 **`virtual ValueBase * copy() const = 0`**
 
-创建自身的一个副本。
+创建自身的一个副本。返回值类型BoolValue是bool的一个包装，还可以表示第三种结果NULL。BoolValue在后面会介绍。
 
 **`virtual ostream & print(ostream & out) const = 0`**
 
@@ -313,28 +331,45 @@ select 表内分组排序版本。
 
 **`virtual ~ValueBase() = 0`**
 
-### class Value<T>
+#### 公有静态方法
+
+**`ValueBase makeNull()`**
+
+按值返回一个NULL对象。此函数作用上和`return Null<ValueBase>()`基本等价，建议使用`Null<ValueBase>`。
+
+**`ValueBase* newNull()`**
+
+在内存中分配一个NULL对象，并且返回指向它的指针。此函数作用上和`return new Null<ValueBase>()`基本等价，建议使用`new Null<ValueBase>`。
+
+### class Value<T>: public ValueBase
 
 #### 定义
 
 `template<class T> class Value<T>: public ValueBase`
 
+因为此模板类只提供对数据类型最简陋的包装，难以实现像`IntValue`和`DoubleValue`相比较的操作，因此现在只有`CharValue`用本模板实现。
+
 程序内用`IntValue`, `DoubleValue`, `Value<string>`等类代表各种数据类型。（旧版使用`Value<int>`、`Value<double>`，改版后不再使用。）
 
-NULL没有对应的类型，在传递数据对象指针时用`nullptr`代表。
+NULL不是一种*类型*，而是一种*属性*。在程序内部，NULL会用不同的类的对象来表示。判断一个对象是否为NULL请用函数`isNull(v)`。
 
 #### 私有成员变量
+
 **`T v`**
+
+该类所包装的数据。
+
 #### 公有成员函数
+
 **`operator T() const`**
 
 类型转换函数。
 
-**`bool operator==(const ValueBase & v) const override`**
+**`BoolValue operator==(const ValueBase & v) const override`**
 
-**`bool operator>(const ValueBase & v) const override`**
+**`BoolValue operator>(const ValueBase & v) const override`**
 
-**`bool operator<(const ValueBase & v) const override`**
+**`BoolValue operator<(const ValueBase & v) const override`**
 
 尝试将v转换为Value<T>然后进行比较；若转换失败，返回false。
 
@@ -343,6 +378,70 @@ NULL没有对应的类型，在传递数据对象指针时用`nullptr`代表。
 **`ostream & print(ostream & out) const`**
 
 **`~Value()`**
+
+### class BoolValue: public ValueBase
+
+#### 私有成员变量
+
+**`bool v`**
+
+存储的数据。与此对象是否表示NULL无关。
+
+#### 全局成员函数
+
+**`BoolValue(bool v = false)`**
+
+**`BoolValue(const BoolValue & v)`**
+
+**`operator bool() const`**
+
+自动类型转换，只返回内部存储的值`v`，与是否是NULL无关。
+
+**`bool isTrue() const`**
+
+判断本对象是否表示`True`。需要同时满足`v`为真且`isNull`为假。
+
+**`ValueBase * copy() const override`**
+
+**`ostream & print(ostream & out) const override`**
+
+**`BoolValue operator&&(const BoolValue & v) const`**
+
+**`BoolValue operator||(const BoolValue & v) const`**
+
+**`BoolValue operator!() const`**
+
+**`BoolValue operator^(const BoolValue & v) const`**
+
+以上四个函数分别表示与、或、非、异或运算。
+
+#### 静态成员函数
+
+**`BoolValue makeNull(bool v = false)`**
+
+返回一个表示NULL的`BoolValue`对象。支持传入一个参数的理由是在某些情况下，程序内部需要
+用这个`BoolValue`对象表示一个二值的意义（只能为True和False，不能为NULL），但是它对用户的意义应当是NULL。
+
+比如：NULL和其他值参与排序时，NULL需要排到其他值前面，`NULL < 1`的结果对用户而言应该是NULL，但是对于排序程序而言，结果应该是`true`。
+
+这样设计的好处：扩展后直接把`bool`改为`BoolValue`，原有的接口保持不变（多亏了自动类型转换），可以在不考虑NULL的情况下继续正常工作
+
+### class IntValue : public ValueBase
+
+整数类型。支持和`IntValue`、`DoubleValue`的各种比较运算。
+
+### class DoubleValue : public ValueBase
+
+浮点数类型。支持和`IntValue`、`DoubleValue`的各种比较运算。
+
+### typedef Value\<string\> CharValue
+
+### 全局函数
+
+**`bool isNull(ValueBase *)`**
+**`bool isNull(const ValueBase & v)`**
+
+判断传入的值是否是NULL。
 
 ## Expression.h
 
@@ -357,6 +456,10 @@ NULL没有对应的类型，在传递数据对象指针时用`nullptr`代表。
 **`string toString() const = 0`**
 
 将Expression转为其所表达语句的字符串形式。
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs) = 0`**
+
+传入一条记录和记录各元素对应的属性名称，返回一个求得的值。
 
 ### class AttributeExpression : public Expression
 
@@ -373,6 +476,8 @@ NULL没有对应的类型，在传递数据对象指针时用`nullptr`代表。
 **`AttributeExpression(const string& name)`**
 
 **`string toString() override`**
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs) override`**
 
 ### ConstExpression : public Expression
 
@@ -394,15 +499,11 @@ NULL没有对应的类型，在传递数据对象指针时用`nullptr`代表。
 
 返回常量的值。
 
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs) override`**
+
 ### class FunctionExpression : public Expression
 
-函数表达式。它是一个抽象类。每个函数都应该有一个作用于单条记录的接口eval。
-
-#### 公有成员函数
-
-**`ValueBase * eval(const Record &, const vector<Attribute> & attrs) = 0`**
-
-传入一条记录和记录各元素对应的属性名称，返回一个求得的值。
+函数表达式。它是一个抽象类。它没有什么自己的特点。
 
 ### class AggregationFunctionExpression : public FunctionExpression
 
@@ -430,6 +531,108 @@ COUNT函数。接受一个表达式，计数有多少使表达式结果非NULL�
 **`ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs)`**
 
 **`string toString()`**
+
+### class OperatorExpression : public Expression
+
+二元运算符基类。这是一个抽象类，但是实现了`toString`函数，节省子类的代码量。
+
+#### 保护成员变量
+
+**`Expression * left, * right`**
+
+左操作数和右操作数。
+
+**`string symbol`**
+
+此运算的符号。用于toString。由子类在构造时候赋值。
+
+#### 公有成员函数
+
+**`OperatorExpression(Expression * a, Expression * b, string sym)`**
+
+**`~OperatorExpression()`**
+
+**`string toString() const`**
+
+类似于`left+symbol+right`形式，将算式转化为字符串。
+
+### class EqualOperator : public OperatorExpression
+
+相等判断。适用于`IntValue`、`DoubleValue`之间，并适用于`CharValue`。返回一个BoolValue。
+
+本类的公有成员函数与以下各类的相同，直到特殊说明为止。
+
+#### 公有成员函数
+
+**`EqualOperator(Expression * a, Expression * b)`**
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs)`**
+
+### class LessOperator : public OperatorExpression
+
+小于判断。适用于`IntValue`、`DoubleValue`之间，并适用于`CharValue`。返回一个BoolValue。
+
+### class GreaterOperator : public OperatorExpression
+
+大于判断。适用于`IntValue`、`DoubleValue`之间，并适用于`CharValue`。返回一个BoolValue。
+
+### class PlusOperator : public OperatorExpression
+
+加法运算。适用于`IntValue`、`DoubleValue`之间。
+如果两操作数都是`IntValue`，则返回`IntValue`；否则二者都提升至`DoubleValue`类型再运算，返回`DoubleValue`。
+
+### class MinusOperator : public OperatorExpression
+
+减法运算。适用于`IntValue`、`DoubleValue`之间。
+如果两操作数都是`IntValue`，则返回`IntValue`；否则二者都提升至`DoubleValue`类型再运算，返回`DoubleValue`。
+
+### class MultiplyOperator : public OperatorExpression
+
+乘法运算。适用于`IntValue`、`DoubleValue`之间。
+如果两操作数都是`IntValue`，则返回`IntValue`；否则二者都提升至`DoubleValue`类型再运算，返回`DoubleValue`。
+
+### class DivideOperator : public OperatorExpression
+
+除法运算。适用于`IntValue`、`DoubleValue`之间。
+如果两操作数都是`IntValue`，则返回`IntValue`，结果为整除；否则二者都提升至`DoubleValue`类型再运算，返回`DoubleValue`，结果是真除。
+当除数为0时，返回NULL。
+
+### class ModOperator : public OperatorExpression
+
+取模运算。适用于`IntValue`。
+返回`IntValue`。
+当除数为0时，返回NULL。
+
+### class LogicAndOperator : public OperatorExpression
+
+逻辑与运算。仅适用于`BoolValue`。
+
+### class LogicOrOperator : public OperatorExpression
+
+逻辑或运算。仅适用于`BoolValue`。
+
+### class LogicXorOperator : public OperatorExpression
+
+逻辑异或运算。仅适用于`BoolValue`。
+
+### class LogicNotOperator : public FunctionExpression
+
+逻辑非运算。仅适用于`BoolValue`。
+这是一个一元操作符，可以看做一元函数，故直接继承自`FunctionExpression`。
+
+#### 私有成员变量
+
+**`Expression * exp`**
+
+取反的表达式。
+
+#### 公有成员函数
+
+**`LogicNotOperator(Expression * v)`**
+
+**`string toString() override`**
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs) override`**
 
 ## sql.h
 
