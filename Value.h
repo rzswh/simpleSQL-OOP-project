@@ -66,8 +66,10 @@ class BoolValue: public ValueBase {
     bool v;
 public:
     BoolValue(bool v = false): v(v){}
+    BoolValue(const BoolValue & v) : v(v.v), ValueBase(v.isNull) {}
     operator bool() const { return v; }
-    virtual ValueBase * copy() const { return new BoolValue(v); }
+    bool isTrue() const { return v && !isNull; }
+    virtual ValueBase * copy() const { return new BoolValue(*this); }
     ostream & print(ostream & out) const;
     //BoolValue operator==(const ValueBase & v) const override;
     BoolValue operator&&(const BoolValue & v) const;
@@ -79,34 +81,6 @@ public:
 };
 
 /**
- * NULL 不是一种类型，而是具有特殊意义的值，和每一种类型都可以交叉。
- * 从这个角度，不妨让NULL
- * 这个运算符表现出一系列极为诡异的性质。首先，有它的运算返回都是NULL（大作业要求范围内），包括比较运算……
- * 然而，在排序中它又表现出非常高的优先级总是位于非空值前面……
- * */
-/*
-class NullValue : public ValueBase {
-public:
-    NullValue(){}
-    BoolValue operator==(const ValueBase & v) const override {
-        return false; // NULL和任何值比较结果都是NULL，包括NULL本身（NULL==NULL返回false）
-    }
-    BoolValue operator<(const ValueBase & v) const override {
-        return false;
-    }
-    BoolValue operator>(const ValueBase & v) const override {
-        return false;
-    }
-    virtual ostream & print(ostream & out) const {
-        auto ptr = &out;
-        if (dynamic_cast<std::ofstream *>(ptr)) 
-            return out << "\\N"; // 文件，只能用“\N”来表示空值
-        return out; // 屏幕：不输出
-    }
-    virtual ValueBase * copy() const { return new NullValue(); }
-};
-*/
-/**
  * 程序内用Value<int>, Value<double>, Value<string>等类代表各种数据类型。
  * 问题：Value<int>和Value<double>比较总是false。
  */
@@ -116,14 +90,6 @@ class Value : public ValueBase{
 public: 
     Value(T v = 0):v(v) {}
     operator T() const { return v; }
-    /*
-    // 用于排序
-    bool lessThan(const ValueBase *) const {
-        Value<T> * nptr = dynamic_cast<Value<T> *>(const_cast<ValueBase *>(&v));
-        if (nptr) return this->operator T() < T(*nptr);
-        // 视作NULL
-        return false;
-    }*/
     // 用于运算
     BoolValue operator==(const ValueBase & v) const override {
         if (isNull || ::isNull(v)) return BoolValue::makeNull();
@@ -140,7 +106,7 @@ public:
         Value<T> * nptr = dynamic_cast<Value<T> *>(const_cast<ValueBase *>(&v));
         return nptr && this->operator T() > T(*nptr);
     }
-    Value<T> * copy() const override { return new Value<T>(v); }
+    Value<T> * copy() const override { return isNull ? new Null<Value<T>>() : new Value<T>(v); }
     ostream & print(ostream & out) const override { 
         if (isNull) return ValueBase::print(out);
         return out << std::fixed << std::setprecision(4) << v; 
@@ -148,9 +114,55 @@ public:
     ~Value(){}
 };
 
+class DoubleValue;
+
+class IntValue : public ValueBase {
+    int v;
+public: 
+    IntValue(int v = 0):v(v) {}
+    operator int() const { return v; }
+    // 用于运算
+    BoolValue operator==(const IntValue & w) const;
+    BoolValue operator==(const DoubleValue & b) const;
+    BoolValue operator==(const ValueBase & v) const override;
+
+    BoolValue operator<(const IntValue & w) const;
+    BoolValue operator<(const DoubleValue & w) const;
+    BoolValue operator<(const ValueBase & v) const override;
+
+    BoolValue operator>(const IntValue & w) const;
+    BoolValue operator>(const DoubleValue & w) const;
+    BoolValue operator>(const ValueBase & v) const override;
+
+    IntValue * copy() const override;
+    ostream & print(ostream & out) const override;
+};
+
+class DoubleValue : public ValueBase {
+    double v;
+public: 
+    DoubleValue(double v = 0):v(v) {}
+    operator double() const { return v; }
+    // 用于运算
+    BoolValue operator==(const IntValue & w) const;
+    BoolValue operator==(const DoubleValue & w) const;
+    BoolValue operator==(const ValueBase & v) const override;
+
+    BoolValue operator<(const IntValue & w) const;
+    BoolValue operator<(const DoubleValue & w) const;
+    BoolValue operator<(const ValueBase & v) const override;
+
+    BoolValue operator>(const IntValue & w) const;
+    BoolValue operator>(const DoubleValue & w) const;
+    BoolValue operator>(const ValueBase & v) const override;
+    DoubleValue * copy() const override { return isNull ? new Null<DoubleValue>() : new DoubleValue(v); }
+    ostream & print(ostream & out) const override;
+    ~DoubleValue(){}
+};
+
 // 建议使用IntValue作为Value<int>的别名（因为扩展需求中的Date和Time都不再是对C++内建类型的简单包装了）
-typedef Value<int> IntValue;
-typedef Value<double> DoubleValue;
+//typedef Value<int> IntValue;
+//typedef Value<double> DoubleValue;
 typedef Value<string> CharValue;
 
 
@@ -158,10 +170,10 @@ long double stolld(string);
 
 // 被新版的converT取代，即将废弃。此版本没有对NULL的支持，不利于后续数据类型的扩展。
 template<class T> Value<T>* convert(ValueBase * b);
-template<> Value<double>* convert(ValueBase * b);
-template<> Value<int>* convert(ValueBase * b);
-// 新的类型转换函数。之前版本设计得太蠢了。
+
+// 新的类型转换函数。之前版本设计得太蠢了。 
 // 新增了对于NULL的支持。
+// 类型转换后，内存会复制一份
 template<class T> T* convertT(ValueBase * b);
 template<> DoubleValue* convertT(ValueBase * b);
 template<> IntValue* convertT(ValueBase * b);
