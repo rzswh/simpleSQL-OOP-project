@@ -3,9 +3,12 @@ import platform
 
 files = os.listdir()
 for name in files:
-    print("---comparing %s---" % (name))
     if not name.endswith(".sql"):
         continue
+    print("---comparing %s---" % (name))
     if platform.platform().find("Linux") >= 0:
         os.system("../main < %s > _temp.out" % (name))
         os.system("diff -Nb _temp.out %s.out" % (name.replace(".sql", "")))
+    elif platform.platform().find("Windows") >= 0:
+        os.system("..\main.exe < %s > temp.out" % (name))
+        os.system("fc /W temp.out %s.out" % (name.replace(".sql", "")))

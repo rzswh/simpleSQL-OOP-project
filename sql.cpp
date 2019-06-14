@@ -385,6 +385,7 @@ SQLInsert::~SQLInsert () {
 /* ---------------- SQLSelect ----------------- */
 SQLSelect::SQLSelect(vector<string> sql_vector) { 
 	order_by = nullptr;
+	where_clause = nullptr;
 	Parse(sql_vector); 
 }
 
