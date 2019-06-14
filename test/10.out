@@ -24,6 +24,8 @@ tyu
 20
 25
 30
+COUNT(tyu)
+9
 Field	Type	Null	Key	Default	Extra
 wer	int(11)	YES		NULL	
 ert	int(11)	YES		NULL	
