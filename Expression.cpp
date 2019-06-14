@@ -35,6 +35,20 @@ string ConstExpression::toString() const {
     return ret;
 }
 
+IdenticalFunction::IdenticalFunction(Expression * exp) : exp(exp) {}
+
+IdenticalFunction::~IdenticalFunction() {
+    delete exp;
+}
+
+ValueBase * IdenticalFunction::eval(const Record &r, const vector<Attribute> & attrs) {
+    return exp->eval(r, attrs);
+}
+
+string IdenticalFunction::toString() const {
+    return "(" + exp->toString() + ")";
+}
+
 CountFunction::CountFunction(Expression *exp) : exp(exp) 
 {}
 

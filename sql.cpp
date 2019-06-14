@@ -157,7 +157,10 @@ Expression * readExpressionFromString(const vector<string>& sql_vector, unsigned
 					// 函数的左括号
 					if (func_name == "count") {
 						results.back() = new CountFunction(results.back());
-					} else if (func_name != "") oprs.push_back(func_name); // 只是个小括号，把不该弹出来的压回去
+					} else if (func_name != "") {
+						oprs.push_back(func_name);
+						results.back() = new IdenticalFunction(results.back());
+					} // 只是个小括号，把不该弹出来的压回去
 					break; // 不能让右括号继续比下去
 				} 
 				// 一元操作符

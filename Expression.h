@@ -48,6 +48,16 @@ class FunctionExpression : public Expression {
 public:
 };
 
+// 恒等函数
+class IdenticalFunction : public FunctionExpression {
+    Expression * exp;
+public:
+    IdenticalFunction(Expression *exp);
+    ~IdenticalFunction();
+    ValueBase * eval(const Record &, const vector<Attribute> & attrs);
+    string toString() const;
+};
+
 /**
  * AVG，SUM，MAX，MIN，COUNT等需要一“组”而不是一“条”记录，因此单独抽象出来
  * */
