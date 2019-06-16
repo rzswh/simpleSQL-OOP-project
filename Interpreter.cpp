@@ -1,4 +1,4 @@
-#include "Interpreter.h"
+﻿#include "Interpreter.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -97,6 +97,7 @@ void Interpreter::GetSQLType()
 	else if (sql_vector[0] == "select") { sql_type = 7; } /* SELECT */
 	else if (sql_vector[0] == "delete") { sql_type = 8; } /* DELETE */
 	else if (sql_vector[0] == "update") { sql_type = 9; } /* UPDATE */
+	else if (sql_vector[0] == "load") { sql_type = 10; } /* LOAD */
 	else {
 		sql_type = -1;
 		cout << "SyntaxError: use 'help;' to get correct command." << endl;
@@ -192,6 +193,13 @@ void Interpreter::ParseSQL()
 			delete st;
 			break;
 		}
+		case 10:
+		{
+			SQLLoad *st = new SQLLoad(sql_vector);
+			manager->Load(*st);
+			delete st;
+			break;
+		}
 		default:
 			break;
 	}
@@ -202,6 +210,8 @@ void Interpreter::SQL(string statement)
 {
 	sql_vector.clear();
 	sql = statement;  /* get SQL statement */
+	if (sql.empty())
+		return;
 	SplitSQL(statement);
 	GetSQLType();		/* get sql type */
 	#ifdef DEBUG
