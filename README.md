@@ -15,6 +15,9 @@
   - Expression家族得到大补充，现在支持数值运算、逻辑运算、比较，之前的WhereClause类被废弃，用Expression代替。
     这样，Where子句、Select语句都具有了巨大的灵活度。
   - 测例可以用脚本一键检验，防止新增加的feature导致之前的bug。
+- 2019.6.18
+  - 增加max,min,sum,avg数字函数，添加相关测试样例
+
 - 其他进展请在这里进行同步……
 
 ## 进展
