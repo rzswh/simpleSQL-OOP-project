@@ -76,46 +76,6 @@ public:
     string toString() const;
 };
 
-class MinFunction : public AggregationFunctionExpression {
-    Expression * exp;
-public:
-    MinFunction(Expression *exp);
-    ~MinFunction();
-    ValueBase * eval(const Record &, const vector<Attribute> & attrs);
-    ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs);
-    string toString() const;
-};
-
-class MaxFunction : public AggregationFunctionExpression {
-    Expression * exp;
-public:
-    MaxFunction(Expression *exp);
-    ~MaxFunction();
-    ValueBase * eval(const Record &, const vector<Attribute> & attrs);
-    ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs);
-    string toString() const;
-};
-
-class SumFunction : public AggregationFunctionExpression {
-    Expression * exp;
-public:
-    SumFunction(Expression *exp);
-    ~SumFunction();
-    ValueBase * eval(const Record &, const vector<Attribute> & attrs);
-    ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs);
-    string toString() const;
-};
-
-class AvgFunction : public AggregationFunctionExpression {
-    Expression * exp;
-public:
-    AvgFunction(Expression *exp);
-    ~AvgFunction();
-    ValueBase * eval(const Record &, const vector<Attribute> & attrs);
-    ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs);
-    string toString() const;
-};
-
 /**
  * 运算符基类。这里每一个运算符都是二元运算。
  * */
