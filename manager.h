@@ -1,4 +1,4 @@
-﻿#pragma once
+#pragma once
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -26,7 +26,6 @@ public:
 	void Select(SQLSelect& statement);
 	void Delete(SQLDelete& statement);
 	void Update(SQLUpdate& statement);
-	void Load(SQLLoad & statement);
 	DataBase *GetDB();//返回当前数据库的指针
 	DataBase *GetDB(string db);//返回名为db的数据库的指针
 	Manager();

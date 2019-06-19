@@ -1,10 +1,7 @@
-﻿// encodings=UTF-8
+// encodings=UTF-8
 #include "Table.h"
 #include <algorithm>
 #include <cassert>
-#include<iostreaM>
-using std::cout;
-using std::endl;
 using std::unique;
 
 Table::Table(string name, vector<Attribute> a, string primary)
@@ -402,7 +399,6 @@ ostream& Table::show(ostream & out) const {
         out << (i.notNull ? "NO" : "YES") << "\t" << (primary == i.name ? "PRI" : "") << "\t";
         out << "NULL\t" << std::endl;
     }
-	return out;
 }
 
 int Table::findAttributeIndex(vector<Attribute> attrs, string name) {

@@ -1,4 +1,4 @@
-﻿#include "PrintableTable.h"
+#include "PrintableTable.h"
 
 using std::endl;
 
@@ -12,7 +12,6 @@ ostream & PrintableTable::printHead(ostream & out) const {
     int n = attrs.size();
     for (int i = 0; i < n-1; i++) out << attrs[i] << "\t";
     out << attrs[n-1] << endl;
-	return out;
 }
 ostream & PrintableTable::printData(ostream & out) const {
     int n = attrs.size();

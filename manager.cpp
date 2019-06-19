@@ -1,4 +1,4 @@
-﻿#include"manager.h"
+#include"manager.h"
 #include<algorithm>
 
 // #define DEBUG
@@ -198,18 +198,4 @@ void Manager::Update(SQLUpdate& statement)
 	if (!tb->update(statement.attrNames,statement.vals,c) ) {
 		cout << "Updating failed. Error Meesage: " << tb->getErrorMsg() << endl;
 	}
-}
-
-void Manager::Load(SQLLoad& statement)
-{
-	if (current_db.length() == 0) return;
-	DataBase *db = GetDB();
-	if (db == NULL) return;
-	Table *tb = db->getTB(statement.get_tb_name());
-	if (tb == NULL) return;
-	for (auto i : statement.vals)
-	{
-		tb->insert(statement.attrNames, i);
-	}
-
 }

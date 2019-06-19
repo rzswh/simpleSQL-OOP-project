@@ -1,4 +1,4 @@
-﻿/*sql类解析输入sql的语句*/
+/*sql类解析输入sql的语句*/
 #pragma once
 #include<string>
 #include<vector>
@@ -7,7 +7,6 @@
 #include"WhereClause.h"
 #include "Expression.h"
 #include<iostream>
-#include <fstream>
 using namespace std;
 
 string to_lower(string str);
@@ -112,25 +111,20 @@ private:
 	string db_name;
 };
 
-//class: SQLLoad: load data infile FILE_NAME into dbname; 
+/* class: SQLLoad: load data infile FILE_NAME into dbname; 
 class SQLLoad: public SQL
 {
 public:
 	SQLLoad(vector<string> sql);
-	string get_tb_name();
-	void set_tb_name(string tbname);
+	string get_db_name();
+	void set_db_name(string dbname);
 	string get_file_name();
-	void set_file_name(string name);
+	void set_file_name(string filename);
 	void Parse(vector<string> sql);
-	void strSplit(const string& s, vector<string>& v, const string& c);
-	vector<string> attrNames;
-	vector<vector<ValueBase *>> vals;
-	~SQLLoad();
 private:
-	string tb_name;
+	string db_name;
 	string file_name;
-
-};
+};*/
 
 class SQLInsert: public SQL
 {
