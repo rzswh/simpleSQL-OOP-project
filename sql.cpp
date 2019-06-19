@@ -98,6 +98,15 @@ Expression * parseExpression(string sentence) {
 		Expression * inner = parseExpression(sentence.substr(isFunc+1, sentence.find_last_of(')') - isFunc - 1));
 		if (func == "count") 
 			return new CountFunction(inner);
+		else if (func == "min")
+			return new MinFunction(inner);
+		else if (func == "max")
+			return new MaxFunction(inner);
+		else if (func == "sum")
+			return new SumFunction(inner);
+		else if (func == "avg")
+			return new AvgFunction(inner);
+		
 	}
 	else{
 		return new AttributeExpression(sentence);
@@ -123,7 +132,7 @@ bool compareOperator(string op1, string op2) {
 }
 bool isFunction(string func) {
 	func = to_lower(func);
-	return func == "count";
+	return func == "count"||func == "min"||func == "max"||func == "sum"||func == "avg";
 }
 
 Expression * readExpressionFromString(const vector<string>& sql_vector, unsigned int & pos) {
@@ -157,7 +166,20 @@ Expression * readExpressionFromString(const vector<string>& sql_vector, unsigned
 					// 函数的左括号
 					if (func_name == "count") {
 						results.back() = new CountFunction(results.back());
-					} else if (func_name != "") {
+					}
+					else if (func_name == "min") {
+						results.back() = new MinFunction(results.back());
+					}
+					else if (func_name == "max") {
+						results.back() = new MaxFunction(results.back());
+					}
+					else if (func_name == "sum") {
+						results.back() = new SumFunction(results.back());
+					}
+					else if (func_name == "avg") {
+						results.back() = new AvgFunction(results.back());
+					}
+					else if (func_name != "") {
 						oprs.push_back(func_name);
 						results.back() = new IdenticalFunction(results.back());
 					} // 只是个小括号，把不该弹出来的压回去
