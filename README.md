@@ -35,6 +35,7 @@
 - SQL算术运算符(5')
 - SQL逻辑运算符(5')
 - 更多的数字函数(8')：min, max, sum, avg
+- UNION操作符(5')：扩展PrintableTable
 
 ### 有待实现的功能
 
@@ -44,7 +45,6 @@
 
 未实现，但容易实现的功能：
 
-- UNION操作符(5')：扩展PrintableTable
 - 多表连接(10')：扩展PrintableTable
 - 扩展支持的数据类型(10')：扩展ValueBase派生类，增加解析器的语句，
 增加比较运算的支持，增加Table中的数据类型，实现日期函数
