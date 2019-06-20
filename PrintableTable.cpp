@@ -46,6 +46,27 @@ ofstream & PrintableTable::print(ofstream & out) const {
     return out;
 }
 
+void PrintableTable::unionAllTable(PrintableTable &prt){
+	vector<ValueBase **> prt_datas = prt.get_data();
+	for(ValueBase** prt_data:prt_datas)
+	insert(prt_data);
+} 
+
+void PrintableTable::unionTable(PrintableTable &prt){
+	vector<ValueBase **> prt_datas = prt.get_data();
+	int size = data.size();
+
+	for(ValueBase** prt_data:prt_datas){
+		int i=0;
+		for(;i<size;i++){
+			if(**(data[i]) == **prt_data)
+				break;
+		}
+		if(i == size){
+			insert(prt_data);size++;}
+	}
+} 
+
 PrintableTable::~PrintableTable() {
     int n = attrs.size();
     for (auto item: data) {
