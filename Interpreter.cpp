@@ -179,12 +179,11 @@ void Interpreter::ParseSQL()
 		
 		case 7:
 		{
-			if(sql_vector[4]=="union"){
+			if(sql_vector[4] == "union"){
 				vector<vector<string>> sql_vectors;
 				vector<int>type;
-				int q=0;
+				int q = 0;
 				type.push_back(0);
-				bool first=true;
 				while(q<sql_vector.size()){
 				vector<string> sql_temp;
 				while(!isEnd(sql_vector[q]))
@@ -192,7 +191,7 @@ void Interpreter::ParseSQL()
 				sql_temp.push_back(";");
 				sql_vectors.push_back(sql_temp);
 				q++;
-				if(q<sql_vectors.size()&&sql_vector[q]=="all") {type.push_back(1);q++;}
+				if(q < sql_vector.size() && sql_vector[q] == "all") {type.push_back(1); q++;}
 				else type.push_back(0);
 				}
 				manager->SelectUnion(sql_vectors,type);
