@@ -1,4 +1,4 @@
-#include"sql.h"	
+﻿#include"sql.h"	
 #include<stack>
 #include <regex>
 
@@ -244,8 +244,19 @@ ValueBase * stringToValue(string tmp) {
 		return new Null<ValueBase>();
 	}
 	else {
-		int ttt=atoi(tmp.c_str());
-		vb = new IntValue(ttt);
+		bool isnum = true;
+		for (int i = 0; i < tmp.size(); i++)
+			if (!isdigit(tmp[i]) && tmp[i] != '-')
+				isnum = false;
+		if (isnum)
+		{
+			int ttt = atoi(tmp.c_str());
+			vb = new IntValue(ttt);
+		}
+		else {
+			vb = new Value<string>(tmp);
+		}
+
 	}
 	return vb;
 }
@@ -520,4 +531,78 @@ void SQLUpdate::Parse(vector<string> sql_vector)
 SQLUpdate::~SQLUpdate() {
 	for (auto i: s) 
 		delete std::get<2>(i);
+}
+
+/* ----------------- SQLLoad ------------------ */
+SQLLoad::SQLLoad(vector<string> sql_vector) { Parse(sql_vector); }
+
+string SQLLoad::get_tb_name() { return tb_name; }
+
+void SQLLoad::set_tb_name(string tbname){ tb_name = tb_name;}
+
+string SQLLoad::get_file_name(){ return file_name;}
+
+void SQLLoad::set_file_name(string filename){ file_name = filename;}
+
+void SQLLoad::Parse(vector<string> sql_vector)
+{
+	sql_type = 10;
+	unsigned int pos = 6;
+	bool is_attr = true;
+	tb_name = sql_vector[pos];
+	file_name = sql_vector[3].substr(1, sql_vector[3].length() - 2);
+	int num = 0;
+	pos += 2;
+	while (is_attr)
+	{
+		is_attr = false;
+		attrNames.push_back(sql_vector[pos]);
+		num++;
+		pos++;
+		if (sql_vector[pos] != ")") is_attr = true;
+		pos++;
+	}
+	ifstream infile;
+	infile.open(file_name,ios::in);
+	if (!infile.is_open())return;
+	string strline;
+
+	while (getline(infile, strline))
+	{
+		vector<ValueBase *> val;
+		vector<string> tmpvals;
+		strSplit(strline, tmpvals, "\t");
+		for (int i = 0; i < num; i++)
+		{
+			//cout << tmpvals[i] << endl;
+			val.push_back(stringToValue(tmpvals[i]));
+			//val.back()->print(cout);
+			//cout << endl;
+		}
+		vals.push_back(val);
+	}
+}
+
+void SQLLoad::strSplit(const string & s, vector<string>& v, const string & c)
+{
+	string::size_type pos1, pos2;
+	pos2 = s.find(c);
+	pos1 = 0;
+	while (string::npos != pos2)
+	{
+		v.push_back(s.substr(pos1, pos2 - pos1));
+
+		pos1 = pos2 + c.size();
+		pos2 = s.find(c, pos1);
+	}
+	if (pos1 != s.length())
+		v.push_back(s.substr(pos1));
+}
+
+
+SQLLoad::~SQLLoad() {
+	for (auto i : vals) 
+		for (auto j: i)
+			delete j;
+	vals.clear();
 }
