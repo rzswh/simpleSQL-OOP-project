@@ -211,5 +211,4 @@ void Manager::Load(SQLLoad& statement)
 	{
 		tb->insert(statement.attrNames, i);
 	}
-
 }

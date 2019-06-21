@@ -2,7 +2,7 @@
 #include <string>
 using std::string;
 
-enum AttributeType {ATTR_INT, ATTR_CHAR, ATTR_DOUBLE};
+enum AttributeType {ATTR_INT, ATTR_CHAR, ATTR_DOUBLE, ATTR_TIME, ATTR_DATE};
 
 /**
  * Convert string form of attribute type into enum type to be used in constructing AttributeType.

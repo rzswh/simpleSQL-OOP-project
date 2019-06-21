@@ -207,10 +207,16 @@ vector<Expression *> readExpressionsFromString(const vector<string> &sql_vector,
 	return exps;
 }
 
+
 ValueBase * stringToValue(string tmp) {
 	ValueBase * vb;
 	if(tmp[0]=='\''){
-		vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\'')-1));
+		if (tmp.find(':')!= string::npos)
+			vb = new TimeValue(tmp.substr(1, tmp.find_last_of('\'') - 1));
+		else if (tmp.find('-') != string::npos)
+			vb = new DateValue(tmp.substr(1, tmp.find_last_of('\'') - 1)); 
+		else
+			vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\'')-1));
 	} 
 	else if(tmp[0]=='\"'){
 		vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\"')-1));
@@ -221,6 +227,7 @@ ValueBase * stringToValue(string tmp) {
 	else if (to_upper(tmp) == "NULL") {
 		return new Null<ValueBase>();
 	}
+
 	else {
 		bool isnum = true;
 		for (int i = 0; i < tmp.size(); i++)
@@ -383,8 +390,12 @@ void SQLInsert::Parse(vector<string> sql_vector)
 
 	for(int i=0;i<num;i++)
 	{
-		pos+=2;
-		vals.push_back(stringToValue(sql_vector[pos]));
+		if (sql_vector[9] == "-"&&sql_vector[11] == "-")
+			vals.push_back(stringToValue(sql_vector[8] + sql_vector[9] + sql_vector[10] + sql_vector[11] + sql_vector[12]));
+		else {
+			pos += 2;
+			vals.push_back(stringToValue(sql_vector[pos]));
+		}
 	}
 }
 
@@ -413,6 +424,21 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 	load_file = false;
 	unsigned int pos = 1; // select -> [expressions]
 	expressions = readExpressionsFromString(sql_vector, pos);
+	
+	if (to_lower(sql_vector[1]) == "addtime")
+	{
+		TimeValue timeval = TimeValue(sql_vector[3].substr(1, sql_vector[3].length() - 2));
+		timeval.addTime(sql_vector[5].substr(1, sql_vector[5].length() - 2));
+		cout << timeval<<endl;
+		return;
+	}
+	if (to_lower(sql_vector[1]) == "adddate")
+	{
+		DateValue timeval = DateValue(sql_vector[3].substr(1, 4)+sql_vector[4]+sql_vector[5]+sql_vector[6]+sql_vector[7].substr(1,2));
+		timeval.addDate(sql_vector[9].substr(1, sql_vector[9].length() - 2));
+		cout << timeval << endl;
+		return;
+	}
 	// ; / from / where / group / order / into / 
 	while (pos + 1 < sql_vector.size() && sql_vector[pos] != ";") { /* sql statement like: "select * from tb;". */
 		string cmd = to_lower(sql_vector[pos]);
@@ -444,6 +470,7 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 			pos++;
 		}
 	}
+
 }
 
 SQLSelect::~SQLSelect() {
@@ -455,6 +482,8 @@ SQLSelect::~SQLSelect() {
 		delete i;
 	delete order_by, where_clause;
 }
+
+
 
 
 /* ---------------- SQLDelete ---------------- */
@@ -552,10 +581,7 @@ void SQLLoad::Parse(vector<string> sql_vector)
 		strSplit(strline, tmpvals, "\t");
 		for (int i = 0; i < num; i++)
 		{
-			//cout << tmpvals[i] << endl;
 			val.push_back(stringToValue(tmpvals[i]));
-			//val.back()->print(cout);
-			//cout << endl;
 		}
 		vals.push_back(val);
 	}

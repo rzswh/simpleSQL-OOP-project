@@ -293,4 +293,173 @@ template<> IntValue* convertT(ValueBase * b) {
     // if (j) return new IntValue(j->operator double());
     return nullptr;
 }
+template<> TimeValue* convertT(ValueBase * b) {
+	if (isNull(b)) {
+		return new Null<TimeValue>;
+	}
+	auto i = dynamic_cast<TimeValue*> (b);
+	if (i) return i->copy();
+	// 
+	// auto j = dynamic_cast<DoubleValue*> (b);
+	// if (j) return new IntValue(j->operator double());
+	return nullptr;
+}
+template<> DateValue* convertT(ValueBase * b) {
+	if (isNull(b)) {
+		return new Null<DateValue>;
+	}
+	auto i = dynamic_cast<DateValue*> (b);
+	if (i) return i->copy();
+	// 
+	// auto j = dynamic_cast<DoubleValue*> (b);
+	// if (j) return new IntValue(j->operator double());
+	return nullptr;
+}
 template CharValue* convertT<CharValue>(ValueBase *b);
+
+TimeValue::TimeValue(string time)
+{
+	int position = 0;
+	int pos[6];
+	int poscnt = 0;
+	while ((position = time.find_first_of(':', position)) != string::npos)
+	{
+		pos[poscnt++] = position;
+		position++;
+	}
+	int p = 0;
+	hour = stoi(time.substr(0, pos[p]));
+	minute = stoi(time.substr(pos[p] + 1, pos[p + 1] - pos[p] - 1));
+	second = stoi(time.substr(pos[p + 1] + 1, time.length() - pos[p + 1] - 1));
+}
+
+BoolValue TimeValue::operator==(const TimeValue & w) const
+{
+	return (isNull || ::isNull(w)) ? BoolValue::makeNull() : BoolValue(timesum() == w.timesum());
+}
+
+BoolValue TimeValue::operator<(const TimeValue & w) const
+{
+	return (isNull || ::isNull(w)) ? BoolValue::makeNull() : BoolValue(timesum() < w.timesum());
+}
+
+BoolValue TimeValue::operator>(const TimeValue & w) const
+{
+	return (isNull || ::isNull(w)) ? BoolValue::makeNull() : BoolValue(timesum() > w.timesum());
+}
+
+ostream & TimeValue::print(ostream & out) const
+{
+	if (isNull) return ValueBase::print(out);
+	return out << std::setw(2) << std::setfill('0') << hour
+		<<":"<< std::setw(2) << std::setfill('0') << minute 
+		<<":"<< std::setw(2) << std::setfill('0') << second ;
+}
+
+void TimeValue::addTime(string time)
+{
+	int position = 0;
+	int pos[6];
+	int poscnt = 0;
+	while ((position = time.find_first_of(':', position)) != string::npos)
+	{
+		pos[poscnt++] = position;
+		position++;
+	}
+	//std::cout << pos[0] << " " << pos[1] << std::endl;
+	int p = 0;
+	int dhour = stoi(time.substr(0, pos[p]));
+	int dminute = stoi(time.substr(pos[p] + 1, pos[p + 1] - pos[p] - 1));
+	int dsecond = stoi(time.substr(pos[p + 1] + 1, time.length() - pos[p + 1] - 1));
+	addTime(dhour, dminute, dsecond);
+}
+
+void TimeValue::addTime(int dhour,int dminute,int dsecond)
+{
+	int time = timesum();
+	time += dsecond;
+	time += dminute * 60;
+	time += dhour * 3600;
+	if (time < 0)
+	{
+		while (time < 0)
+			time += 86400;
+	}
+	time = time % 86400;
+	hour = time / 3600;
+	time = time % 3600;
+	minute = time / 60;
+	second = time % 60;
+}
+
+template CharValue* convertT<CharValue>(ValueBase *b);
+
+DateValue::DateValue(string time)
+{
+	int position = 0;
+	int pos[6];
+	int poscnt = 0;
+	while ((position = time.find_first_of('-', position)) != string::npos)
+	{
+		pos[poscnt++] = position;
+		position++;
+	}
+	int p = 0;
+	year = stoi(time.substr(0, pos[p]));
+	month = stoi(time.substr(pos[p] + 1, pos[p + 1] - pos[p] - 1));
+	day = stoi(time.substr(pos[p + 1] + 1, time.length() - pos[p + 1] - 1));
+}
+
+int DateValue::timesum() const
+{
+	return year * 1000 + month * 100 + day;
+}
+
+BoolValue DateValue::operator==(const DateValue & w) const
+{
+	return (isNull || ::isNull(w)) ? BoolValue::makeNull() : BoolValue(timesum() == w.timesum());
+}
+
+BoolValue DateValue::operator<(const DateValue & w) const
+{
+	return (isNull || ::isNull(w)) ? BoolValue::makeNull() : BoolValue(timesum() < w.timesum());
+}
+
+BoolValue DateValue::operator>(const DateValue & w) const
+{
+	return (isNull || ::isNull(w)) ? BoolValue::makeNull() : BoolValue(timesum() > w.timesum());
+}
+
+ostream & DateValue::print(ostream & out) const
+{
+	if (isNull) return ValueBase::print(out);
+	return out << std::setw(4) << std::setfill('0') << year
+		<< "-" << std::setw(2) << std::setfill('0') << month
+		<< "-" << std::setw(2) << std::setfill('0') << day;
+}
+
+void DateValue::addoneday()
+{
+	if (month == 12 && day == 31)
+	{
+		year += 1;
+		month = 1;
+		day = 1;
+	}
+	else if (day == ds[month - 1])
+	{
+		day = 1;
+		month += 1;
+	}
+	else day += 1;
+
+}
+
+void DateValue::addDate(string s)
+{
+	int dday = stoi(s);
+	while (dday--)
+	{
+		addoneday();
+	}
+}

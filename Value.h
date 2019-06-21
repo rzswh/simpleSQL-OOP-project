@@ -161,7 +161,55 @@ public:
 //typedef Value<double> DoubleValue;
 typedef Value<string> CharValue;
 
+class TimeValue : public ValueBase {
+	int hour;
+	int minute;
+	int second;
+public:
+	TimeValue(string time);
+	TimeValue(int hour = 0,int minute =0,int second = 0) :hour(hour),minute(minute),second(second) {}
+	int timesum() const { return 3600 * hour + 60 * minute + second; }
+	// 用于运算
+	BoolValue operator==(const TimeValue & w) const;
 
+	BoolValue operator<(const TimeValue & w) const;
+
+	BoolValue operator>(const TimeValue & w) const;
+
+	TimeValue * copy() const override { return isNull ? new Null<TimeValue>() : new TimeValue(hour,minute,second); };
+	ostream & print(ostream & out) const override;
+
+	BoolValue valid() { return BoolValue(hour >= 0 && hour<24 && minute >= 0 && minute<60 && second >= 0 && second<60); }
+
+	void addTime(int dhour,int dminute,int dsecond);
+
+	void addTime(string s);
+};
+class DateValue : public ValueBase {
+	int year;
+	int month;
+	int day;
+	int ds[12] = { 31,28,31,30,31,30,31,31,30,31,30,31 };
+	int mtod[12] = { 31,59,90,120,151,181,212,243,273,304,334,365 };
+public:
+	DateValue(string time);
+	DateValue(int year = 0, int month = 1, int day = 1) :year(year), month(month), day(day) {}
+	int timesum() const;
+	// 用于运算
+	BoolValue operator==(const DateValue & w) const;
+
+	BoolValue operator<(const DateValue & w) const;
+
+	BoolValue operator>(const DateValue & w) const;
+	DateValue * copy() const override { return isNull ? new Null<DateValue>() : new DateValue(year, month, day); };
+	ostream & print(ostream & out) const override;
+
+	BoolValue valid() { return BoolValue(year >= 0 && month >= 1 && month<=12 && day >= 1 && day<=ds[month-1]); }
+
+	void addoneday();
+
+	void addDate(string s);
+};
 long double stolld(string);
 
 // 被新版的converT取代，即将废弃。此版本没有对NULL的支持，不利于后续数据类型的扩展。
@@ -173,3 +221,6 @@ template<class T> Value<T>* convert(ValueBase * b);
 template<class T> T* convertT(ValueBase * b);
 template<> DoubleValue* convertT(ValueBase * b);
 template<> IntValue* convertT(ValueBase * b);
+template<> TimeValue* convertT(ValueBase * b);
+template<> DateValue* convertT(ValueBase * b);
+

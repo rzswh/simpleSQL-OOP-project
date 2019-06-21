@@ -15,6 +15,16 @@ bool WhereClause::test(const Record & r, const vector<Attribute> & va) const {
             sv = convertT<DoubleValue>(std::get<2>(s));
             v = convertT<DoubleValue>(const_cast<ValueBase*>(v));
         }
+		else if (tp == ATTR_TIME)
+		{
+			sv = convertT<TimeValue>(std::get<2>(s));
+			v = convertT<TimeValue>(const_cast<ValueBase*>(v));
+		}
+		else if (tp == ATTR_DATE)
+		{
+			sv = convertT<DateValue>(std::get<2>(s));
+			v = convertT<DateValue>(const_cast<ValueBase*>(v));
+		}
         if (std::get<1>(s) == ARITH_GREATER) {
             return v && (*v > *sv).isTrue();
         }

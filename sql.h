@@ -161,13 +161,24 @@ public:
 	vector<Expression *> get_group_by();
 	Expression * get_order_by();
 	~SQLSelect();
+	bool is_time() { return istime; }
+	string gettime() { return time; }
+	string getdate() { return date; }
+	string getdtime() { return dtime; }
+	string getddate() { return ddate; }
+
 private:
+	bool istime;
 	vector<Expression *> expressions;
 	vector<Expression *> group_by;
 	Expression * order_by;
 	string tb_name;
 	bool load_file;
 	string load_file_name;
+	string time;
+	string date;
+	string dtime;
+	string ddate;
 };
 
 class SQLDelete: public SQL
@@ -181,7 +192,6 @@ public:
 	~SQLDelete();
 private:
 	string tb_name;
-	
 };
 
 class SQLUpdate: public SQL

@@ -49,6 +49,18 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
                         if (vals[i] && !t[j]) succ = false;
                         break;
                     }
+					case ATTR_TIME:
+					{
+						t[j] = convertT<TimeValue>(vals[i]);
+						if (vals[i] && !t[j]) succ = false;
+						break;
+					}	
+					case ATTR_DATE:
+					{
+						t[j] = convertT<DateValue>(vals[i]);
+						if (vals[i] && !t[j]) succ = false;
+						break;
+					}
                     default:
                         break;
                 }
@@ -109,6 +121,10 @@ bool Table::checkType(AttributeType att, ValueBase * v) {
         return false;
     if (att == ATTR_INT && !dynamic_cast<IntValue*> (v) )
         return false;
+	if (att == ATTR_TIME && !dynamic_cast<TimeValue*> (v))
+		return false;
+	if (att == ATTR_DATE && !dynamic_cast<DateValue*> (v))
+		return false;
     return true;
 }
 //#define DEBUG
@@ -397,6 +413,8 @@ ostream& Table::show(ostream & out) const {
             out << "int(11)";
         else if (i.type == ATTR_DOUBLE) 
             out << "double";
+		else if (i.type == ATTR_TIME)
+			out << "time";
         else { /* undefined */}
         out << "\t";
         out << (i.notNull ? "NO" : "YES") << "\t" << (primary == i.name ? "PRI" : "") << "\t";
