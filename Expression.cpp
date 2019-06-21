@@ -85,9 +85,10 @@ ValueBase * CountFunction::eval(const Record &r, const vector<Attribute> & attrs
 }
 ValueBase * CountFunction::evalAggregate(vector<Record *>& rs, const vector<Attribute> & attrs) {
     int ret = 0;
+    bool star = dynamic_cast<AttributeExpression*>(exp) && dynamic_cast<AttributeExpression*>(exp)->toString() == "*";
     for (auto it: rs) {
         auto val = exp->eval(*it, attrs);
-        if (!isNull(val)) ret++;
+        if (!isNull(val) || star) ret++;
         delete val;
     }
     return new IntValue(ret);
@@ -118,7 +119,9 @@ ValueBase * MinFunction::evalAggregate(vector<Record *>& rs, const vector<Attrib
         if (!isNull(val) && num->operator double() < ret) ret = *num;
         delete val, num;
     }
-    return ret == DBL_MAX ? new Null<DoubleValue>() : new DoubleValue(ret);
+    if (ret == int(ret)) return new IntValue(ret);
+    if (ret == DBL_MAX) return new Null<DoubleValue>();
+    return new DoubleValue(ret);
 }
 
 
@@ -147,7 +150,9 @@ ValueBase * MaxFunction::evalAggregate(vector<Record *>& rs, const vector<Attrib
         if (!isNull(val) && num->operator double() > ret) ret = *num;
         delete val, num;
     }
-    return ret == DBL_MAX ? new Null<DoubleValue>() : new DoubleValue(ret);
+    if (ret == int(ret)) return new IntValue(ret);
+    if (ret == DBL_MAX) return new Null<DoubleValue>();
+    return new DoubleValue(ret);
 }
 
 
@@ -176,6 +181,8 @@ ValueBase * SumFunction::evalAggregate(vector<Record *>& rs, const vector<Attrib
         if (!isNull(val)) ret += *num;
         delete val, num;
     }
+    if (ret == int(ret)) return new IntValue(ret);
+    if (ret == DBL_MAX) return new Null<DoubleValue>();
     return new DoubleValue(ret);
 }
 
