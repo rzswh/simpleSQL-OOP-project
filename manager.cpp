@@ -177,6 +177,38 @@ void Manager::Select(SQLSelect& statement)
 	delete res;
 }
 
+void Manager::SelectUnion(vector<vector<string>> sql_vectors,vector<int>union_type)
+{
+	
+	if (current_db.length() == 0) return;
+	SQLSelect *statement = new SQLSelect(sql_vectors[0]);
+	Table *tb = GetDB()->getTB(statement->get_tb_name());
+	PrintableTable *res = tb->select(statement->get_expressions(), statement->where_clause, 
+			statement->get_group_by(), statement->get_order_by());
+	
+	for(int i=1;i<sql_vectors.size();i++){
+	SQLSelect *temp_st = new SQLSelect(sql_vectors[i]);
+	Table *temp_tb = GetDB()->getTB(temp_st->get_tb_name());
+	PrintableTable *temp_res = temp_tb->select(temp_st->get_expressions(), temp_st->where_clause, 
+			temp_st->get_group_by(), temp_st->get_order_by());
+	if(union_type[i]==0)
+		res->unionTable(*temp_res);
+	else res->unionAllTable(*temp_res);
+	}
+
+	if (!statement->if_load_file()) {
+		res->print(cout);
+	} else {
+		ofstream fout(statement->get_load_file_name());
+		res->print(fout);
+		fout.close();
+	}
+
+	delete statement;
+	delete res;
+}
+
+
 void Manager::Delete(SQLDelete& statement)
 {
 	if (current_db.length() == 0) return;

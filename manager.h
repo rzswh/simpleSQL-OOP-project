@@ -24,6 +24,7 @@ public:
 	void Use(SQLUse& statement);
 	void Insert(SQLInsert& statement);
 	void Select(SQLSelect& statement);
+	void SelectUnion(vector<vector<string>> sql_vectors,vector<int>union_type);
 	void Delete(SQLDelete& statement);
 	void Update(SQLUpdate& statement);
 	void Load(SQLLoad & statement);
