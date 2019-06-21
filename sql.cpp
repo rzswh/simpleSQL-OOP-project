@@ -149,11 +149,14 @@ Expression * readExpressionFromString(const vector<string>& sql_vector, unsigned
 			// sql_vector[pos]应当为'('，把左括号也压入栈中
 			oprs.push_back(sql_vector[pos++]);
 			lastOperand = false; opr_rank = 1;
-		} else if ((opr_rank == 0 || exp == "*") && !lastOperand) { // * 具有二义性
+		} else if ((opr_rank == 0 || exp == "*" || exp == "-") && !lastOperand) { // *,- 具有二义性
 			// 字符串常量、数字常量
-			if (exp[0] == '\'' || exp[0] == '"' || regex_match(exp, regex("[0-9.+-]+")))
-				results.push_back(new ConstExpression(stringToValue(exp)));
-			else results.push_back(new AttributeExpression(exp));  // attr
+			string val = exp;
+			if (exp == "-") 
+				val += sql_vector[pos++];
+			if (val[0] == '\'' || val[0] == '"' || regex_match(val, regex("[0-9.+-]+")))
+				results.push_back(new ConstExpression(stringToValue(val)));
+			else results.push_back(new AttributeExpression(val));  // attr
 			lastOperand = true;
 		}
 		else {
@@ -416,7 +419,11 @@ void SQLInsert::Parse(vector<string> sql_vector)
 			vals.push_back(stringToValue(sql_vector[8] + sql_vector[9] + sql_vector[10] + sql_vector[11] + sql_vector[12]));
 		else {
 			pos += 2;
-			vals.push_back(stringToValue(sql_vector[pos]));
+			if (sql_vector[pos] == "-") {
+				vals.push_back(stringToValue(sql_vector[pos] + sql_vector[pos+1]));
+				pos++;
+			} else 
+				vals.push_back(stringToValue(sql_vector[pos]));
 		}
 	}
 }

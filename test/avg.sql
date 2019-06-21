@@ -5,5 +5,6 @@ INSERT INTO oop_info(stu_id, grade) VALUES (2018011243, 98);
 INSERT INTO oop_info(stu_id, grade) VALUES (2018011344, 77);
 INSERT INTO oop_info(stu_id, grade) VALUES (2018011445, 55);
 INSERT INTO oop_info(stu_id, grade) VALUES (2018011449, 62);
+INSERT INTO oop_info(stu_id, grade) VALUES (2018011488, -10);
 SELECT AVG(grade) from oop_info;
 DROP DATABASE OOP;
