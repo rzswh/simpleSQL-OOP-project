@@ -262,7 +262,7 @@ template<> Value<int>* convert(ValueBase * b) {
     if (i != nullptr) return new Value<int>(i->operator double());
     return nullptr;
 }*/
-template Value<string>* convert<string>(ValueBase *b);
+//template Value<string>* convert<string>(ValueBase *b);
 
 template<class T> T* convertT(ValueBase * b) {
 	if (isNull(b)) {
@@ -315,7 +315,7 @@ template<> DateValue* convertT(ValueBase * b) {
 	// if (j) return new IntValue(j->operator double());
 	return nullptr;
 }
-template CharValue* convertT<CharValue>(ValueBase *b);
+//template CharValue* convertT<CharValue>(ValueBase *b);
 
 TimeValue::TimeValue(string time)
 {
