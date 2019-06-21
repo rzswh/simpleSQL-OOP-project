@@ -62,7 +62,7 @@ public:
      * 与本表无关的属性将会被忽略。如果whereClause中没有不被忽略的属性，表中所有的行都将被删除。
      * 返回值总是true（成功）【除非需求有改变】
      * */
-    bool del(WhereClause c);
+    bool del(Expression *);
     /**
      * update
      * 更新满足whereClause的行，将attrNames中的属性值改为vals中的对应元素。
@@ -73,7 +73,7 @@ public:
      * 在赋值时，传入的值会被复制而不是移动。即，传入值的指针不会被本Table对象接管。
      *   调用者需要在插入操作完成后处理传入值的内存回收。
      * */
-    bool update(vector<string> attrNames, vector<ValueBase *> vals, WhereClause c);
+    bool update(vector<string> attrNames, vector<ValueBase *> vals, Expression* c);
     /**
      * select 朴素版本
      * 选出满足whereClause的行，取出包含在attrFilter中的属性，组成一张新表并返回。

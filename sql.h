@@ -187,8 +187,9 @@ public:
 	SQLDelete(vector<string> sql);
 	string get_tb_name();
 	void Parse(vector<string> sql);
-	vector<WhereClause::SubSentence> s; 
-	vector<pair<LogicOperation, int> > o;
+	// vector<WhereClause::SubSentence> s; 
+	// vector<pair<LogicOperation, int> > o;
+	Expression * whereClause;
 	~SQLDelete();
 private:
 	string tb_name;
@@ -202,8 +203,9 @@ public:
 	void Parse(vector<string> sql);
 	vector<string> attrNames;
 	vector<ValueBase *> vals;
-	vector<WhereClause::SubSentence> s; 
-	vector<pair<LogicOperation, int> > o;
+	// vector<WhereClause::SubSentence> s; 
+	// vector<pair<LogicOperation, int> > o;
+	Expression * whereClause;
 	~SQLUpdate();
 private:
 	string tb_name;

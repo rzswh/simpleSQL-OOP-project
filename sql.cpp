@@ -11,6 +11,11 @@ string to_upper(string str){
 	return str;
 }
 
+Expression * buildWhereClauseFrom(vector<string> sql_vector, unsigned int& pos) {
+	pos++;
+	return readExpressionFromString(sql_vector, pos);
+}
+
 unsigned int buildWhereClauseFrom(vector<string> sql_vector, 
 		vector<pair<LogicOperation, int> > &o,
 		vector<WhereClause::SubSentence> &s,
@@ -529,12 +534,14 @@ void SQLDelete::Parse(vector<string> sql_vector)
 	pos ++;
 	
 	if (sql_vector.size() == pos + 1) return; /* sql statement like: "delete from tb;". */
-	pos = buildWhereClauseFrom(sql_vector, o, s, pos);
+	// pos = buildWhereClauseFrom(sql_vector, o, s, pos);
+	whereClause = buildWhereClauseFrom(sql_vector, pos);
 }
 
 SQLDelete::~SQLDelete() {
-	for (auto i: s) 
-		delete std::get<2>(i);
+	delete whereClause;
+	// for (auto i: s) 
+	// 	delete std::get<2>(i);
 }
 
 /* ---------------  SQLUpdate ----------------*/
@@ -561,12 +568,13 @@ void SQLUpdate::Parse(vector<string> sql_vector)
 		if (sql_vector[pos] == ",") pos ++;
 		else if (to_lower(sql_vector[pos]) == "where") break;
 	}
-	pos = buildWhereClauseFrom(sql_vector, o, s, pos);
+	whereClause = buildWhereClauseFrom(sql_vector, pos);
 }
 
 SQLUpdate::~SQLUpdate() {
-	for (auto i: s) 
-		delete std::get<2>(i);
+	delete whereClause;
+	// for (auto i: s) 
+	// 	delete std::get<2>(i);
 }
 
 /* ----------------- SQLLoad ------------------ */

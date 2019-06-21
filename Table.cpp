@@ -105,10 +105,11 @@ bool Table::insert(vector<string> attrNames, vector<ValueBase *> vals) {
     return succ;
 }
 
-bool Table::del(WhereClause c) {
+bool Table::del(Expression * c) {
     // 逆序选择元素
     for (int i = data.size()-1; i>= 0; i-- ) {
-        if (c.test(data[i], attrs)) {
+        auto val = dynamic_cast<BoolValue*>(c->eval(data[i], attrs));
+        if (val && val->isTrue()) {
             data.erase(data.begin() + i);
         }
     }
@@ -131,7 +132,7 @@ bool Table::checkType(AttributeType att, ValueBase * v) {
 #ifdef DEBUG
 #include <iostream>
 #endif
-bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClause c) {
+bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, Expression* c) {
     // 类型匹配，非空检查
     for (int j = 0; j < attrNames.size(); j++) {
         for (int k = 0; k < attrs.size(); k++) {
@@ -176,7 +177,8 @@ bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, WhereClau
     }
     // 合法，则可以进行修改
     for (int i = 0; i < data.size(); i ++) {
-        if (!c.test(data[i], attrs)) {
+        auto val = dynamic_cast<BoolValue*>(c->eval(data[i], attrs));
+        if (!val || !val->isTrue()) {
             if (primaryValue) 
                 primaryCount += *data[i][primaryIndex] == *primaryValue;
         } else {

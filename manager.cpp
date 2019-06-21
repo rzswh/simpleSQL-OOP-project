@@ -214,8 +214,8 @@ void Manager::Delete(SQLDelete& statement)
 	if (current_db.length() == 0) return;
 	Table *tb = GetDB()->getTB(statement.get_tb_name());
 	if (tb == NULL) return;
-	WhereClause c(statement.s,statement.o);
-	tb->del(c);
+	// WhereClause c(statement.s,statement.o);
+	tb->del(statement.whereClause);
 }
 
 void Manager::Update(SQLUpdate& statement)
@@ -226,8 +226,8 @@ void Manager::Update(SQLUpdate& statement)
 
 	Table *tb = db->getTB(statement.get_tb_name());
 	if (tb == NULL) return;
-	WhereClause c(statement.s,statement.o);
-	if (!tb->update(statement.attrNames,statement.vals,c) ) {
+	// WhereClause c(statement.s,statement.o);
+	if (!tb->update(statement.attrNames,statement.vals,statement.whereClause) ) {
 		cout << "Updating failed. Error Meesage: " << tb->getErrorMsg() << endl;
 	}
 }
