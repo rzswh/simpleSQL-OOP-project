@@ -179,7 +179,7 @@ void Interpreter::ParseSQL()
 		
 		case 7:
 		{
-			bool isUnion=false;
+			bool isUnion = false;
 			for(string sql_word:sql_vector){
 				if(sql_word == "union") {
 				   isUnion = true;
