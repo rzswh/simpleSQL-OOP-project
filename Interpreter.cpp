@@ -180,10 +180,11 @@ void Interpreter::ParseSQL()
 		case 7:
 		{
 			bool isUnion=false;
-			for(sql_word:sql_vector){
+			for(string sql_word:sql_vector){
 				if(sql_word == "union") {
 				   isUnion = true;
 				   break;
+				}
 			}
 				   
 			if(isUnion){
