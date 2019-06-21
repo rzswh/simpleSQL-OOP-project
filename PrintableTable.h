@@ -26,5 +26,8 @@ public:
     void setData(const vector<Record> & data);
     ostream & print(ostream & out) const;
     ofstream & print(ofstream & out) const;
+    const vector<ValueBase **> get_data(){return data;}
+	void unionTable(PrintableTable &prt); 
+	void unionAllTable(PrintableTable &prt); 
     ~PrintableTable();
 };
