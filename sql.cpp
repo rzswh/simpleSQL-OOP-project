@@ -229,10 +229,16 @@ vector<Expression *> readExpressionsFromString(const vector<string> &sql_vector,
 	return exps;
 }
 
+
 ValueBase * stringToValue(string tmp) {
 	ValueBase * vb;
 	if(tmp[0]=='\''){
-		vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\'')-1));
+		if (tmp.find(':')!= string::npos)
+			vb = new TimeValue(tmp.substr(1, tmp.find_last_of('\'') - 1));
+		else if (tmp.find('-') != string::npos)
+			vb = new DateValue(tmp.substr(1, tmp.find_last_of('\'') - 1)); 
+		else
+			vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\'')-1));
 	} 
 	else if(tmp[0]=='\"'){
 		vb = new Value<string>(tmp.substr(1, tmp.find_last_of('\"')-1));
@@ -243,9 +249,21 @@ ValueBase * stringToValue(string tmp) {
 	else if (to_upper(tmp) == "NULL") {
 		return new Null<ValueBase>();
 	}
+
 	else {
-		int ttt=atoi(tmp.c_str());
-		vb = new IntValue(ttt);
+		bool isnum = true;
+		for (int i = 0; i < tmp.size(); i++)
+			if (!isdigit(tmp[i]) && tmp[i] != '-')
+				isnum = false;
+		if (isnum)
+		{
+			int ttt = atoi(tmp.c_str());
+			vb = new IntValue(ttt);
+		}
+		else {
+			vb = new Value<string>(tmp);
+		}
+
 	}
 	return vb;
 }
@@ -394,8 +412,12 @@ void SQLInsert::Parse(vector<string> sql_vector)
 
 	for(int i=0;i<num;i++)
 	{
-		pos+=2;
-		vals.push_back(stringToValue(sql_vector[pos]));
+		if (sql_vector[9] == "-"&&sql_vector[11] == "-")
+			vals.push_back(stringToValue(sql_vector[8] + sql_vector[9] + sql_vector[10] + sql_vector[11] + sql_vector[12]));
+		else {
+			pos += 2;
+			vals.push_back(stringToValue(sql_vector[pos]));
+		}
 	}
 }
 
@@ -424,6 +446,21 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 	load_file = false;
 	unsigned int pos = 1; // select -> [expressions]
 	expressions = readExpressionsFromString(sql_vector, pos);
+	
+	if (to_lower(sql_vector[1]) == "addtime")
+	{
+		TimeValue timeval = TimeValue(sql_vector[3].substr(1, sql_vector[3].length() - 2));
+		timeval.addTime(sql_vector[5].substr(1, sql_vector[5].length() - 2));
+		cout << timeval<<endl;
+		return;
+	}
+	if (to_lower(sql_vector[1]) == "adddate")
+	{
+		DateValue timeval = DateValue(sql_vector[3].substr(1, 4)+sql_vector[4]+sql_vector[5]+sql_vector[6]+sql_vector[7].substr(1,2));
+		timeval.addDate(sql_vector[9].substr(1, sql_vector[9].length() - 2));
+		cout << timeval << endl;
+		return;
+	}
 	// ; / from / where / group / order / into / 
 	while (pos + 1 < sql_vector.size() && sql_vector[pos] != ";") { /* sql statement like: "select * from tb;". */
 		string cmd = to_lower(sql_vector[pos]);
@@ -520,4 +557,75 @@ void SQLUpdate::Parse(vector<string> sql_vector)
 SQLUpdate::~SQLUpdate() {
 	for (auto i: s) 
 		delete std::get<2>(i);
+}
+
+/* ----------------- SQLLoad ------------------ */
+SQLLoad::SQLLoad(vector<string> sql_vector) { Parse(sql_vector); }
+
+string SQLLoad::get_tb_name() { return tb_name; }
+
+void SQLLoad::set_tb_name(string tbname){ tb_name = tb_name;}
+
+string SQLLoad::get_file_name(){ return file_name;}
+
+void SQLLoad::set_file_name(string filename){ file_name = filename;}
+
+void SQLLoad::Parse(vector<string> sql_vector)
+{
+	sql_type = 10;
+	unsigned int pos = 6;
+	bool is_attr = true;
+	tb_name = sql_vector[pos];
+	file_name = sql_vector[3].substr(1, sql_vector[3].length() - 2);
+	int num = 0;
+	pos += 2;
+	while (is_attr)
+	{
+		is_attr = false;
+		attrNames.push_back(sql_vector[pos]);
+		num++;
+		pos++;
+		if (sql_vector[pos] != ")") is_attr = true;
+		pos++;
+	}
+	ifstream infile;
+	infile.open(file_name,ios::in);
+	if (!infile.is_open())return;
+	string strline;
+
+	while (getline(infile, strline))
+	{
+		vector<ValueBase *> val;
+		vector<string> tmpvals;
+		strSplit(strline, tmpvals, "\t");
+		for (int i = 0; i < num; i++)
+		{
+			val.push_back(stringToValue(tmpvals[i]));
+		}
+		vals.push_back(val);
+	}
+}
+
+void SQLLoad::strSplit(const string & s, vector<string>& v, const string & c)
+{
+	string::size_type pos1, pos2;
+	pos2 = s.find(c);
+	pos1 = 0;
+	while (string::npos != pos2)
+	{
+		v.push_back(s.substr(pos1, pos2 - pos1));
+
+		pos1 = pos2 + c.size();
+		pos2 = s.find(c, pos1);
+	}
+	if (pos1 != s.length())
+		v.push_back(s.substr(pos1));
+}
+
+
+SQLLoad::~SQLLoad() {
+	for (auto i : vals) 
+		for (auto j: i)
+			delete j;
+	vals.clear();
 }
