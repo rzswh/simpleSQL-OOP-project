@@ -132,7 +132,7 @@ bool compareOperator(string op1, string op2) {
 }
 bool isFunction(string func) {
 	func = to_lower(func);
-	return func == "count"||func == "min"||func == "max"||func == "sum"||func == "avg";
+	return func == "count"||func == "min"||func == "max"||func == "sum"||func == "avg"||func=="abs";
 }
 
 Expression * readExpressionFromString(const vector<string>& sql_vector, unsigned int & pos) {
@@ -181,6 +181,9 @@ Expression * readExpressionFromString(const vector<string>& sql_vector, unsigned
 					}
 					else if (func_name == "avg") {
 						results.back() = new AvgFunction(results.back());
+					}
+					else if (func_name == "abs") {
+						results.back() = new AbsFunction(results.back());
 					}
 					else if (func_name != "") {
 						oprs.push_back(func_name);

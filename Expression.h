@@ -66,6 +66,15 @@ public:
     virtual ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs) = 0;
 };
 
+class AbsFunction : public FunctionExpression {
+    Expression * exp;
+public:
+    AbsFunction(Expression *exp);
+    ~AbsFunction();
+    ValueBase * eval(const Record &, const vector<Attribute> & attrs);
+    string toString() const;
+};
+
 class CountFunction : public AggregationFunctionExpression {
     Expression * exp;
 public:

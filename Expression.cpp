@@ -1,4 +1,5 @@
 #include "Expression.h"
+#include <cfloat>
 #include <sstream>
 
 Expression::~Expression() {}
@@ -49,6 +50,27 @@ string IdenticalFunction::toString() const {
     return "(" + exp->toString() + ")";
 }
 
+AbsFunction::AbsFunction(Expression * exp) : exp(exp) {}
+
+AbsFunction::~AbsFunction() {
+    delete exp;
+}
+
+ValueBase * AbsFunction::eval(const Record &r, const vector<Attribute> & attrs) {
+    auto val = exp->eval(r, attrs);
+    ValueBase * ret;
+    if (isNull(val)) ret = new Null<DoubleValue>();
+    else if (dynamic_cast<IntValue*>(val)) ret = new IntValue(abs(*dynamic_cast<IntValue*>(val)));
+    else if (dynamic_cast<DoubleValue*>(val)) ret = new DoubleValue(abs(*dynamic_cast<DoubleValue*>(val)));
+    else ret = new Null<DoubleValue>();
+    delete val;
+    return ret;
+}
+
+string AbsFunction::toString() const {
+    return "ABS(" + exp->toString() + ")";
+}
+
 CountFunction::CountFunction(Expression *exp) : exp(exp) 
 {}
 
@@ -62,22 +84,13 @@ ValueBase * CountFunction::eval(const Record &r, const vector<Attribute> & attrs
     
 }
 ValueBase * CountFunction::evalAggregate(vector<Record *>& rs, const vector<Attribute> & attrs) {
-    if (dynamic_cast<ConstExpression *> (exp)) 
-        return new IntValue(rs.size() * isNull(dynamic_cast<ConstExpression *> (exp)->eval()) );
-    else if (dynamic_cast<AttributeExpression *>(exp)) {
-        auto ae = dynamic_cast<AttributeExpression *>(exp);
-        int ret = 0;
-        for (auto it: rs) {
-            Record & r = *it;
-            for (int i = 0; i < attrs.size(); i++) {
-                if (!isNull(r[i]) && (ae->toString() == "*" || ae->toString() == attrs[i].name)) {
-                    ret ++;
-                    break;
-                }
-            }
-        }
-        return new IntValue(ret);
-    } else return ValueBase::newNull();
+    int ret = 0;
+    for (auto it: rs) {
+        auto val = exp->eval(*it, attrs);
+        if (!isNull(val)) ret++;
+        delete val;
+    }
+    return new IntValue(ret);
 }
 
 string CountFunction::toString() const {
@@ -98,28 +111,14 @@ ValueBase * MinFunction::eval(const Record &r, const vector<Attribute> & attrs) 
     
 }
 ValueBase * MinFunction::evalAggregate(vector<Record *>& rs, const vector<Attribute> & attrs) {
-    if (dynamic_cast<ConstExpression *> (exp)) 
-        return new IntValue(rs.size() * isNull(dynamic_cast<ConstExpression *> (exp)->eval()) );
-    else if (dynamic_cast<AttributeExpression *>(exp)) {
-        auto ae = dynamic_cast<AttributeExpression *>(exp);
-		ValueBase *ans = ValueBase::newNull();
-		int ret = 0;
-		for (auto it: rs) {
-            Record & r = *it;
-            for (int i = 0; i < attrs.size(); i++) {
-                if (!isNull(r[i]) && (ae->toString() == "*" || ae->toString() == attrs[i].name)) {
-					if(ret==0)
-						ans = r[i]->copy();
-					else if(*(r[i]) < *ans){
-						ans = r[i]->copy();
-					}
-					ret++;
-					break;
-                }
-            }
-        }
-		return ans->copy();
-    } else return ValueBase::newNull();
+    double ret = DBL_MAX;
+    for (auto it: rs) {
+        auto val = exp->eval(*it, attrs);
+        auto num = convertT<DoubleValue>(val);
+        if (!isNull(val) && num->operator double() < ret) ret = *num;
+        delete val, num;
+    }
+    return ret == DBL_MAX ? new Null<DoubleValue>() : new DoubleValue(ret);
 }
 
 
@@ -141,27 +140,14 @@ ValueBase * MaxFunction::eval(const Record &r, const vector<Attribute> & attrs) 
     
 }
 ValueBase * MaxFunction::evalAggregate(vector<Record *>& rs, const vector<Attribute> & attrs) {
-    if (dynamic_cast<ConstExpression *> (exp)) 
-        return new IntValue(rs.size() * isNull(dynamic_cast<ConstExpression *> (exp)->eval()) );
-    else if (dynamic_cast<AttributeExpression *>(exp)) {
-        auto ae = dynamic_cast<AttributeExpression *>(exp);
-		ValueBase *ans = ValueBase::newNull();
-		int ret = 0;
-		for (auto it: rs) {
-            Record & r = *it;
-            for (int i = 0; i < attrs.size(); i++) {
-                if (!isNull(r[i]) && (ae->toString() == "*" || ae->toString() == attrs[i].name)) {
-					if(ret==0)	ans = r[i]->copy();
-					else if(*(r[i]) > *ans){
-						ans = r[i]->copy();
-					}
-					ret++;
-					break;
-                }
-            }
-        }
-		return ans->copy();
-    } else return ValueBase::newNull();
+    double ret = -DBL_MAX;
+    for (auto it: rs) {
+        auto val = exp->eval(*it, attrs);
+        auto num = convertT<DoubleValue>(val);
+        if (!isNull(val) && num->operator double() > ret) ret = *num;
+        delete val, num;
+    }
+    return ret == DBL_MAX ? new Null<DoubleValue>() : new DoubleValue(ret);
 }
 
 
@@ -183,30 +169,14 @@ ValueBase * SumFunction::eval(const Record &r, const vector<Attribute> & attrs) 
     
 }
 ValueBase * SumFunction::evalAggregate(vector<Record *>& rs, const vector<Attribute> & attrs) {
-    if (dynamic_cast<ConstExpression *> (exp)) 
-        return new IntValue(rs.size() * isNull(dynamic_cast<ConstExpression *> (exp)->eval()) );
-    else if (dynamic_cast<AttributeExpression *>(exp)) {
-        auto ae = dynamic_cast<AttributeExpression *>(exp);
-		double ret = 0;
-		AttributeType type;
-		for (auto it: rs) {
-            Record & r = *it;
-            for (int i = 0; i < attrs.size(); i++) {
-                if (!isNull(r[i]) && (ae->toString() == "*" || ae->toString() == attrs[i].name)) {
-					type=attrs[i].type;
-					if(type==ATTR_INT)
-						ret += *(dynamic_cast<IntValue *> (r[i]));
-					else if(type==ATTR_DOUBLE)
-						ret += *(dynamic_cast<DoubleValue *> (r[i]));
-					break;
-                }
-            }
-        }
-		if(type==ATTR_INT)
-			return new IntValue(ret);
-		else
-			return new DoubleValue(ret);
-    } else return ValueBase::newNull();
+    double ret = 0;
+    for (auto it: rs) {
+        auto val = exp->eval(*it, attrs);
+        auto num = convertT<DoubleValue>(val);
+        if (!isNull(val)) ret += *num;
+        delete val, num;
+    }
+    return new DoubleValue(ret);
 }
 
 
@@ -227,32 +197,14 @@ ValueBase * AvgFunction::eval(const Record &r, const vector<Attribute> & attrs) 
     
 }
 ValueBase * AvgFunction::evalAggregate(vector<Record *>& rs, const vector<Attribute> & attrs) {
-     if (dynamic_cast<ConstExpression *> (exp)) 
-        return new IntValue(rs.size() * isNull(dynamic_cast<ConstExpression *> (exp)->eval()) );
-    else if (dynamic_cast<AttributeExpression *>(exp)) {
-        auto ae = dynamic_cast<AttributeExpression *>(exp);
-		double ret = 0;
-		int num;
-		AttributeType type;
-		for (auto it: rs) {
-            Record & r = *it;
-            for (int i = 0; i < attrs.size(); i++) {
-                if (!isNull(r[i]) && (ae->toString() == "*" || ae->toString() == attrs[i].name)) {
-					num++;
-					type=attrs[i].type;
-					if(type==ATTR_INT)
-						ret += *(dynamic_cast<IntValue *> (r[i]));
-					else if(type==ATTR_DOUBLE)
-						ret += *(dynamic_cast<DoubleValue *> (r[i]));
-					break;
-                }
-            }
-        }
-		if(type==ATTR_INT)
-			return new DoubleValue(ret/num);
-		else
-			return new DoubleValue(ret/num);
-    } else return ValueBase::newNull();
+    double ret = 0;int cnt = 0;
+    for (auto it: rs) {
+        auto val = exp->eval(*it, attrs);
+        auto num = convertT<DoubleValue>(val);
+        if (!isNull(val)) ret += *num, cnt++;
+        delete val, num;
+    }
+    return cnt ? new DoubleValue(ret / cnt) : new Null<DoubleValue>();
 }
 
 
