@@ -249,7 +249,7 @@ ValueBase * AvgFunction::evalAggregate(vector<Record *>& rs, const vector<Attrib
             }
         }
 		if(type==ATTR_INT)
-			return new IntValue(ret/num);
+			return new DoubleValue(ret/num);
 		else
 			return new DoubleValue(ret/num);
     } else return ValueBase::newNull();
