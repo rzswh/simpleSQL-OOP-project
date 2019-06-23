@@ -1,0 +1,10 @@
+CREATE DATABASE OOP;
+USE OOP;
+CREATE TABLE oop_info(stu_id INT, PRIMARY KEY(stu_id), grade INT, sex CHAR);
+INSERT INTO oop_info(stu_id, grade, sex) VALUES (2018011243, 98, "m");
+INSERT INTO oop_info(stu_id, grade, sex) VALUES (2018011344, 77, "f");
+INSERT INTO oop_info(stu_id, grade, sex) VALUES (2018011445, 55, "m");
+INSERT INTO oop_info(stu_id, grade, sex) VALUES (2018011449, 62, "f");
+INSERT INTO oop_info(stu_id, grade, sex) VALUES (2018011488, -10, "m");
+SELECT sex, AVG(ABS(grade)) GROUP BY sex ORDER BY AVG(grade) from oop_info;
+DROP DATABASE OOP;
