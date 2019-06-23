@@ -1,3 +1,7 @@
+select adddate('1927-03-16', interval 3 day);
+select adddate('2020-07-18', interval 20 day);
+select adddate('2020-07-18', interval 10 month);
+select adddate('2012-07-18', interval 12 year);
 CREATE DATABASE OOP;
 USE OOP;
 CREATE TABLE oop_info(oop_date DATE NOT NULL, PRIMARY KEY(oop_date));
@@ -6,5 +10,4 @@ INSERT INTO oop_info(oop_date) VALUES ('1998-09-05');
 INSERT INTO oop_info(oop_date) VALUES ('1999-12-31');
 INSERT INTO oop_info(oop_date) VALUES ('2000-02-31');
 select * from oop_info;
-select adddate('1927-03-16', interval 3 day);
 DROP DATABASE OOP;
