@@ -10,12 +10,12 @@ string to_upper(string str){
 	transform(str.begin(),str.end(),str.begin(),::toupper);
 	return str;
 }
-
 Expression * buildWhereClauseFrom(vector<string> sql_vector, unsigned int& pos) {
 	pos++;
 	return readExpressionFromString(sql_vector, pos);
 }
 
+/*
 unsigned int buildWhereClauseFrom(vector<string> sql_vector, 
 		vector<pair<LogicOperation, int> > &o,
 		vector<WhereClause::SubSentence> &s,
@@ -76,7 +76,7 @@ unsigned int buildWhereClauseFrom(vector<string> sql_vector,
 			s.push_back( make_tuple(v1, ar,vb,rank++)); // C
 			exp = false;
 		}
-		if (sql_vector[pos] == ";") break; /* one where condition, break. */
+		if (sql_vector[pos] == ";") break; /* one where condition, break. * /
 	}
 	while (!ss.empty() ) {
 		o.push_back(std::make_pair(ss.top(),rank++));
@@ -89,7 +89,7 @@ unsigned int buildWhereClauseFrom(vector<string> sql_vector,
 	#endif
 	return pos;
 }
-
+*/
 
 Expression * parseExpression(string sentence) {
 	#ifdef DEBUG

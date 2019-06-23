@@ -1,19 +1,11 @@
 ﻿#include"manager.h"
 #include<algorithm>
 
-// #define DEBUG
-
 Manager::Manager():num(0){}
 
 
 void Manager::CreateDatabase(SQLCreateDatabase& statement){
-	#ifdef DEBUG
-	cout << "Creating DataBase: " << statement.get_db_name() << endl;
-	#endif
-	//DataBase *temp=new DataBase(statement.get_db_name());//此处应修改为相应构造函数
-	//databases.push_back(*temp);
 	databases.push_back(DataBase(statement.get_db_name()));
-	//cout << (databases.back()).name << "---" << endl;
 	num++;
 }
 
@@ -31,10 +23,6 @@ DataBase* Manager::GetDB(string db){
 	return NULL;
 }
 void Manager::CreateTable(SQLCreateTable& statement){
-	#ifdef DEBUG
-	cout << "Creating table: " << statement.get_tb_name() << endl;
-	#endif
-
 	DataBase *db = GetDB();
 	db->CreateTable(statement);
 }
@@ -66,7 +54,6 @@ void Manager::ShowTables()
 		cout << "Use 'create table' command to create a new table." << endl;
 		return;
 	}
-	// cout << "| " << setw(22) << "Tables_in_"+ current_db << " |" << endl;
 	cout << "Tables_in_" << current_db << endl;
 
 	vector<string> output;
@@ -75,8 +62,6 @@ void Manager::ShowTables()
 		output.push_back((*tb)->name);
 	std::sort(output.begin(), output.end());
 	for (auto &i: output) cout<< i << endl;
-	// for (auto tb = db->GetTables().begin(); tb != db->GetTables().end(); tb++)
-	// 	cout << "| " << setw(22) << (*tb)->name << " |" << endl;
 	
 }
 
@@ -99,10 +84,6 @@ void Manager::ShowColumns(SQLShowColumns &statement){
 
 void Manager::DropDatabase(SQLDropDatabase& statement)
 {
-	#ifdef DEBUG
-	cout << "Droping DataBase: " << statement.get_db_name() << endl;
-	#endif
-	
 	//to be finished: delete statement.get_db_name; 
 	for (auto iter = databases.begin(); iter != databases.end(); iter++) {
 		if (iter->name == statement.get_db_name()) {
@@ -119,9 +100,6 @@ void Manager::DropDatabase(SQLDropDatabase& statement)
 
 void Manager::DropTable(SQLDropTable& statement)
 {
-	#ifdef DEBUG
-	cout << "Droping table: " << statement.get_tb_name() << endl;
-	#endif
 	if (current_db.length() == 0) return;
 
 	DataBase *db = GetDB();
@@ -148,11 +126,6 @@ void Manager::Insert(SQLInsert& statement)
 	
 	string tb_name=statement.get_tb_name();
 	Table *tb=db->getTB(tb_name);
-	#ifdef DEBUG
-	cout << "Item Info: ***" << endl;
-	for (auto i: statement.attrNames) cout << i << " "; cout << endl;
-	for (auto i: statement.vals) (i->print(cout)) << " "; cout << endl << "*****" << endl;
-	#endif
 	if (!tb->insert(statement.attrNames,statement.vals)) {
 		cout << "Insertion failed. " << endl;
 	}

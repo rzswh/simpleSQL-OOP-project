@@ -6,14 +6,14 @@
 
 ## 结构图
 
-![avatar](TableStructure.png)
+下图是整体框架图。`Intepreter`、`SQL`是前端，`DataBase`、`Table`等下部的类属于底层。`ValueBase`与
+
+![avatar](Database.jpg)
 
 * `Table`: 数据表。存储数据，支持插入新行、删除满足条件的行、更新满足条件的行为给定值、选择出满足条件的行以组成一张可打印出到屏幕的表格。
 * `Attribute`: 数据表内每列数据的属性。包括属性名称、属性的数据类型、属性是否为空。
 * `Record`: 一条记录，即一行内的数据。
-* `WhereClause`: Where子句类，将查询表达式以方便计算机计算的方式存储，并能判断某一条记录是否满足该子句的条件。
-* `ValueBase`: 数据类型的基类。这是一个抽象类（接口），为了方便在其上重载了一些比较运算符，以及方便进行输出的方法。
-* `IntValue`、`DoubleValue`、`BoolValue`等ValueBase的子类：各种数据类型。
+* `ValueBase`: 数据类型的基类。这是一个抽象类（接口），为了方便在其上重载了一些比较运算符，以及方便进行输出的方法。`IntValue`、`DoubleValue`、`BoolValue`、`TimeValue`、`DateValue`作为`ValueBase`的子类，表示各种数据类型。
 * `Expression` 及其子类: 运算表达式，用于表达select语句的表达式。比如字段名、常量、函数、运算。
 * `PrintableTable`: 将用于屏幕输出的属性和数据集合。可以视作另一种只读、不可修改、只可以打印的数据表。
 * `Sql`:解析输入的语句，根据输入调用合适的数据库接口，并且将结果输出。
@@ -21,7 +21,16 @@
 * `Manager`：包含一个Database向量，管理全部数据库。传入经过sql类型处理后的sql命令，调用相应函数，实现命令的要求。支持创建、删除数据库、显示所有数据库、访问特定数据库。
 * `Database`:数据库类，管理数据表。支持插入、删除数据表、访问特定数据表。
 
-# 接口说明
+`ValueBase`家族的继承结构图如下：
+
+![avatar](Value.jpg)
+
+`Expression`家族的继承结构图如下（图大小有限，不是所有的子类都显示在此图中）：
+
+![avatar](Expression.jpg)
+
+
+# 接口详细说明
 
 ## Table.h
 
@@ -204,6 +213,11 @@ select 表内分组排序版本。
 **`ofstream & print(ofstream & out)`**
 
 针对文件输出的特殊版本print。只输出表格内容，不输出表头。
+
+**`void unionTable(PrintableTable &prt)`**
+**`void unionAllTable(PrintableTable &prt)`**
+
+`SELECT`输出取并函数。分别实现`UNION`和`UNION ALL`的功能。
 
 **`~PrintableTable()`**
 
@@ -479,7 +493,7 @@ NULL不是一种*类型*，而是一种*属性*。在程序内部，NULL会用�
 
 **`ValueBase * eval(const Record &, const vector<Attribute> & attrs) override`**
 
-### ConstExpression : public Expression
+### class ConstExpression : public Expression
 
 常量表达式。它无需作用在记录上也可以求值。
 
@@ -505,6 +519,18 @@ NULL不是一种*类型*，而是一种*属性*。在程序内部，NULL会用�
 
 函数表达式。它是一个抽象类。它没有什么自己的特点。
 
+### class AbsFunction : public AggregationFunctionExpression
+
+ABS函数。求一个表达式结果的绝对值。应用于`IntValue`、`DoubleValue`。
+
+#### 公有成员函数
+
+**`AbsFunction(Expression *exp)`**
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs)`**
+
+**`string toString()`**
+
 ### class AggregationFunctionExpression : public FunctionExpression
 
 累积函数表达式。它是一个抽象类。除了eval，它还规定了作用于一群记录的接口。
@@ -525,6 +551,62 @@ COUNT函数。接受一个表达式，计数有多少使表达式结果非NULL�
 #### 公有成员函数
 
 **`CountFunction(Expression *exp)`**
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs)`**
+
+**`ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs)`**
+
+**`string toString()`**
+
+### class SumFunction : public AggregationFunctionExpression
+
+SUM函数。接受一个表达式，对一组记录分别对该表达式求值之后再求和。忽略NULL。
+
+#### 公有成员函数
+
+**`SumFunction(Expression *exp)`**
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs)`**
+
+**`ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs)`**
+
+**`string toString()`**
+
+### class MaxFunction : public AggregationFunctionExpression
+
+MAX函数。接受一个表达式，对一组记录分别对该表达式求值之后再求其中的最大值。忽略NULL。
+
+#### 公有成员函数
+
+**`SumFunction(Expression *exp)`**
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs)`**
+
+**`ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs)`**
+
+**`string toString()`**
+
+### class MinFunction : public AggregationFunctionExpression
+
+MIN函数。接受一个表达式，对一组记录分别对该表达式求值之后再求其中的最小值。忽略NULL。
+
+#### 公有成员函数
+
+**`MinFunction(Expression *exp)`**
+
+**`ValueBase * eval(const Record &, const vector<Attribute> & attrs)`**
+
+**`ValueBase * evalAggregate(vector<Record *>&, const vector<Attribute> & attrs)`**
+
+**`string toString()`**
+
+### class AvgFunction : public AggregationFunctionExpression
+
+AVG函数。接受一个表达式，对一组记录分别对该表达式求值之后再求其平均值。忽略NULL。如果没有非NULL记录，则返回NULL。
+
+#### 公有成员函数
+
+**`AvgFunction(Expression *exp)`**
 
 **`ValueBase * eval(const Record &, const vector<Attribute> & attrs)`**
 
@@ -681,6 +763,10 @@ COUNT函数。接受一个表达式，计数有多少使表达式结果非NULL�
 ### class SQLUpdate:
 
 解析CREATE DATADATABASE命令。
+
+### class SQLLoad:
+
+解析LOAD DATA INFILE [filename..] INTO TABLE命令。
 
 ### 主要接口：
 
