@@ -4,7 +4,7 @@
 #include<vector>
 #include<algorithm>
 #include"Attribute.h"
-#include"WhereClause.h"
+// #include"WhereClause.h"
 #include "Expression.h"
 #include<iostream>
 #include <fstream>
@@ -14,11 +14,11 @@ string to_lower(string str);
 string to_upper(string str);
 /**
  * 语句被切割后放在sql_vector中，本函数将sql_vector中从pos下标开始的where子句转换为其组成要素。
- */ 
 unsigned int buildWhereClauseFrom(vector<string> sql_vector, 
 		vector<pair<LogicOperation, int> > &o,
 		vector<WhereClause::SubSentence> &s,
 		unsigned int pos);
+ */ 
 
 ValueBase * stringToValue(string);
 
