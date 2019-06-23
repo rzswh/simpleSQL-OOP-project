@@ -1,7 +1,7 @@
-select adddate('1927-03-16', interval 3 day);
-select adddate('2020-07-18', interval 20 day);
-select adddate('2020-07-18', interval 10 month);
-select adddate('2012-07-18', interval 12 year);
+SELECT ADDDATE('1927-03-16', interval 3 day);
+SELECT ADDDATE('2020-07-18', interval 20 day);
+SELECT ADDDATE('2020-07-18', interval 10 month);
+SELECT ADDDATE('2012-07-18', interval 12 year);
 CREATE DATABASE OOP;
 USE OOP;
 CREATE TABLE oop_info(oop_date DATE NOT NULL, PRIMARY KEY(oop_date));
