@@ -2,7 +2,7 @@
 #include "Table.h"
 #include <algorithm>
 #include <cassert>
-#include<iostreaM>
+#include <iostream>
 using std::cout;
 using std::endl;
 using std::unique;

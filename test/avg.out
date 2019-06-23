@@ -1,2 +1,3 @@
-AVG(grade)
-73
+sex     AVG(ABS(grade))
+m       54.3333
+f       69.5000
