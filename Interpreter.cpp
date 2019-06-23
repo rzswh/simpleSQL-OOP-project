@@ -247,10 +247,5 @@ void Interpreter::SQL(string statement)
 		return;
 	SplitSQL(statement);
 	GetSQLType();		/* get sql type */
-	#ifdef DEBUG
-	cout << "[debug] split into: ";
-	for (auto i: sql_vector) { cout << i << " "; }
-	cout << endl;
-	#endif
 	ParseSQL();			/* construct SQL object and pass to manager */
 }

@@ -219,7 +219,7 @@ bool Table::update(vector<string> attrNames, vector<ValueBase *> vals, Expressio
     }
     return true;
 }
-
+/*
 PrintableTable * Table::select(vector<string> attrFilter, WhereClause c) {
     vector<Attribute> newTableAttrs;
     for (auto i: attrs) {
@@ -248,7 +248,7 @@ PrintableTable * Table::select(vector<string> attrFilter, WhereClause c) {
         table->insert(nr);
     }
     return table;
-}
+}*/
 
 PrintableTable * Table::select(vector<Expression *> exps, Expression * c, vector<Expression*> group_by, Expression* order_by) {
     // 先根据WhereClause过滤记录
@@ -432,21 +432,3 @@ int Table::findAttributeIndex(vector<Attribute> attrs, string name) {
     std::cerr << name << std::endl;
     return attrs.size();
 }
-
-// 以下代码仅供单元测试使用
-/*
-#include <iostream>
-using std::cout;
-using std::endl;
-void Table::test_print() {
-    int n = attrs.size();
-    for (int i = 0; i < n; i++) cout << attrs[i].name << "\t";
-    cout << endl;
-    for (auto & j: data) {
-        for (int i = 0; i < n; i++) {
-            if (j[i]) cout << (*j[i]);
-            cout << "\t";
-        }
-        cout << endl;
-    }
-}*/

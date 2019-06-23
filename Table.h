@@ -5,7 +5,7 @@
 #include "Attribute.h"
 #include "Value.h"
 #include "Record.h"
-#include "WhereClause.h"
+// #include "WhereClause.h"
 #include "PrintableTable.h"
 #include "Expression.h"
 
@@ -75,11 +75,11 @@ public:
      * */
     bool update(vector<string> attrNames, vector<ValueBase *> vals, Expression* c);
     /**
-     * select 朴素版本
+     * select 朴素版本（旧版，废弃）
      * 选出满足whereClause的行，取出包含在attrFilter中的属性，组成一张新表并返回。
      * @attrFilter 需要选出的属性名称。如果欲选出所有属性，请传入一个仅包含字符串“*”的向量。
      * */
-    PrintableTable * select(vector<string> attrFilter, WhereClause c);
+    // PrintableTable * select(vector<string> attrFilter, WhereClause c);
     /**
      * select 表内分组排序版本
      * 选出满足whereClause的行，按照group_by分组、order_by排序，对exps中表达式进行求值，得到各列，组成一张新表并返回。
