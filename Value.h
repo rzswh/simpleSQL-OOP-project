@@ -209,6 +209,8 @@ public:
 	void addoneday();
 
 	void addDate(string s);
+    void addMonth(string s);
+    void addYear(string s);
 };
 long double stolld(string);
 

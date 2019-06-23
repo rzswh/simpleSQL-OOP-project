@@ -355,3 +355,16 @@ void DateValue::addDate(string s)
 		addoneday();
 	}
 }
+void DateValue::addMonth(string s)
+{
+	int dmonth = stoi(s);
+	month += dmonth;
+	year += month / 12;
+	month = month % 12;
+}
+
+void DateValue::addYear(string s)
+{
+	int dyear = stoi(s);
+	year += dyear;
+}

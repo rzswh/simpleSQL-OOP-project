@@ -471,8 +471,13 @@ void SQLSelect::Parse(vector<string> sql_vector) /* only support "select * ". */
 	}
 	if (to_lower(sql_vector[1]) == "adddate")
 	{
-		DateValue timeval = DateValue(sql_vector[3].substr(1, 4)+sql_vector[4]+sql_vector[5]+sql_vector[6]+sql_vector[7].substr(1,2));
-		timeval.addDate(sql_vector[9].substr(1, sql_vector[9].length() - 2));
+		DateValue timeval = DateValue(sql_vector[3].substr(1, 4)+sql_vector[4]+sql_vector[5]+sql_vector[6]+sql_vector[7].substr(0,2));
+		if(to_lower(sql_vector[11])=="day")
+			timeval.addDate(sql_vector[10]);
+		else if (to_lower(sql_vector[11]) == "month")
+			timeval.addMonth(sql_vector[10]);
+		else if (to_lower(sql_vector[11]) == "year")
+			timeval.addYear(sql_vector[10]);
 		cout << timeval << endl;
 		return;
 	}
