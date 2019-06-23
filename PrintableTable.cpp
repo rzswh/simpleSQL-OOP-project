@@ -9,6 +9,7 @@ PrintableTable::PrintableTable(vector<Expression *>  exps) {
     for (auto &i: exps) attrs.push_back(i->toString());
 }
 ostream & PrintableTable::printHead(ostream & out) const {
+    if (data.size() == 0) return out;
     int n = attrs.size();
     for (int i = 0; i < n-1; i++) out << attrs[i] << "\t";
     out << attrs[n-1] << endl;

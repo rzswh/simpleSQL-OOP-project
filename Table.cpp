@@ -2,7 +2,7 @@
 #include "Table.h"
 #include <algorithm>
 #include <cassert>
-#include<iostream>
+#include <iostream>
 using std::cout;
 using std::endl;
 using std::unique;
@@ -432,21 +432,3 @@ int Table::findAttributeIndex(vector<Attribute> attrs, string name) {
     std::cerr << name << std::endl;
     return attrs.size();
 }
-
-// 以下代码仅供单元测试使用
-/*
-#include <iostream>
-using std::cout;
-using std::endl;
-void Table::test_print() {
-    int n = attrs.size();
-    for (int i = 0; i < n; i++) cout << attrs[i].name << "\t";
-    cout << endl;
-    for (auto & j: data) {
-        for (int i = 0; i < n; i++) {
-            if (j[i]) cout << (*j[i]);
-            cout << "\t";
-        }
-        cout << endl;
-    }
-}*/

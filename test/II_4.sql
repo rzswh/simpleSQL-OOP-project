@@ -1,0 +1,11 @@
+CREATE DATABASE OOP;
+USE OOP;
+CREATE TABLE oop_info(stu_id INT NOT NULL, PRIMARY KEY(stu_id), stu_name CHAR);
+INSERT INTO oop_info(stu_id, stu_name) VALUES (2018011243, "a");
+INSERT INTO oop_info(stu_id, stu_name) VALUES (2018011043, "a");
+INSERT INTO oop_info(stu_id, stu_name) VALUES (2018010243, "a");
+INSERT INTO oop_info(stu_id, stu_name) VALUES (2018001344, "b");
+INSERT INTO oop_info(stu_id, stu_name) VALUES (2018001394, "b");
+INSERT INTO oop_info(stu_id, stu_name) VALUES (2018011445, "c");
+SELECT stu_name, COUNT(*) from oop_info GROUP BY stu_name ORDER BY COUNT(*);
+DROP DATABASE OOP;
